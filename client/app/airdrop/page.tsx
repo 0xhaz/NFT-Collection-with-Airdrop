@@ -14,7 +14,7 @@ const Airdrop = () => {
   };
 
   return (
-    <div className="flex flex-col items-center space-y-6 mt-10">
+    <div className="mt-20 flex flex-1 flex-col items-center space-y-6 text-center lg:space-y-0 lg:justify-center">
       <h1 className="text-3xl font-bold">Claim Your Airdrop</h1>
 
       <div className="flex flex-col items-center justify-center">

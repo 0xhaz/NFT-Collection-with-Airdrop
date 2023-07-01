@@ -92,7 +92,13 @@ const Sidebar = () => {
                 }
               }}
             >
-              <Icon {...item} isActive={isActive} />
+              <Icon
+                {...item}
+                isActive={isActive}
+                styles={
+                  !isActive || isActive !== item.name ? "text-color-600" : ""
+                }
+              />
               <span className="text-[16px] ml-2 mt-1">{item.name}</span>
             </div>
           ))}

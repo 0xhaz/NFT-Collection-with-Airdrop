@@ -1,9 +1,7 @@
 {
   "dependencies": {
-    "@chainlink/contracts": "^0.5.1",
     "@openzeppelin/contracts": "^4.8.0",
-    "hardhat": "^2.12.4",
-    "timekeeper": "^2.2.0"
+    "hardhat": "^2.12.4"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",

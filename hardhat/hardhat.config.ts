@@ -9,7 +9,7 @@ import "@typechain/hardhat";
 import "@nomicfoundation/hardhat-chai-matchers";
 import "hardhat-deploy";
 
-const GOERLI_URL = process.env.GOERLI_RPC_URL;
+const SEPOLIA_URL = process.env.SEPOLIA_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY;
@@ -30,7 +30,7 @@ const config: HardhatUserConfig = {
       gasPrice: 8000000000,
     },
     goerli: {
-      url: GOERLI_URL,
+      url: SEPOLIA_URL,
       accounts: [PRIVATE_KEY],
       chainId: 5,
       allowUnlimitedContractSize: true,
@@ -52,18 +52,23 @@ const config: HardhatUserConfig = {
     compilers: [
       {
         version: "0.8.17",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
       {
         version: "0.6.6",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
       },
     ],
-
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
-    },
   },
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
@@ -83,10 +88,10 @@ const config: HardhatUserConfig = {
     feeAccount: {
       default: "deployer",
     },
-    user1: {
+    minter: {
       default: 2,
     },
-    user2: {
+    user1: {
       default: 3,
     },
   },
