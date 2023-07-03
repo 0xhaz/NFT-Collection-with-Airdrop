@@ -1,7 +1,9 @@
 {
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0",
-    "hardhat": "^2.12.4"
+    "hardhat": "^2.12.4",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.3.10"
   },
   "devDependencies": {
     "@ethersproject/abi": "^5.4.7",

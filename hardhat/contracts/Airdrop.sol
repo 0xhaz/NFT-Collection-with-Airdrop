@@ -2,134 +2,134 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/metatx/MinimalForwarder.sol";
 
-contract Airdrop is ERC1155, ERC2771Context, Ownable {
-    bytes32 private s_merkleRoot;
-    IERC721 private s_nftContract;
+error Airdrop__AlreadyClaimed(address caller);
+error Airdrop__NotInAllowList(address caller);
 
-    mapping(address => bool) private s_claimed;
+contract Airdrop is ERC1155, Ownable {
+    bytes32 public immutable i_root;
+    string public s_nftTokenURIs;
+    uint256 public s_tokenCounter;
+
+    mapping(address => bool) public s_claimed;
     mapping(uint256 => bool) private s_exists;
-    mapping(uint256 => string) private s_tokenURIs;
+    mapping(uint256 => address) public s_tokenOwners;
+    mapping(address => uint256) public s_tokenIds;
+    mapping(uint256 => string) public s_tokenURIs;
 
-    event Claim(address indexed recipient, uint256 indexed tokenId);
+    event AirdropClaimed(address indexed owner, uint256 indexed tokenId);
+    event TokenBurned(address indexed owner, uint256 indexed tokenId);
 
-    constructor(
-        bytes32 _merkleRoot,
-        address _trustedForwarder,
-        address _nftContractAddress
-    ) ERC1155("") ERC2771Context(_trustedForwarder) {
-        s_merkleRoot = _merkleRoot;
-        s_nftContract = IERC721(_nftContractAddress);
+    /**
+     *
+     * @dev This event will be emitted inside mintNFT function
+     * @param owner Address of the owner of the NFT
+     * @param tokenId ID of the minted NFT
+     */
+
+    event NFTMinted(address indexed owner, uint256 indexed tokenId);
+
+    /**
+     *
+     * @param _root Merkle root of the airdrop
+     * @param _nftTokenURIs NFT token URIs
+     */
+
+    constructor(bytes32 _root, string memory _nftTokenURIs) ERC1155("") {
+        i_root = _root;
+        s_nftTokenURIs = _nftTokenURIs;
+        s_tokenCounter = 0;
     }
 
-    function claimAirdrop(
-        uint256 _tokenId,
-        bytes32[] calldata _merkleProof
-    ) external {
-        address _recipient = _msgSender();
-        require(!s_claimed[_recipient], "Airdrop: Already claimed");
-        require(
-            _verifyProof(_merkleProof, _recipient),
-            "Airdrop: Invalid proof"
-        );
-        require(
-            _checkNftOwnership(_recipient, _tokenId),
-            "Airdrop: Caller is not the owner of the NFT"
-        );
+    /**
+     *
+     * @dev This function will mint NFTs to the caller
+     * @param _proof will be the hex value of the proof with the give caller address generated from the merkle tree
+     *
+     */
 
-        s_claimed[_recipient] = true;
-        s_tokenURIs[_tokenId] = _generateTokenURI(_recipient);
+    function claimAirdrop(bytes32[] memory _proof) external {
+        if (s_claimed[msg.sender]) {
+            revert Airdrop__AlreadyClaimed(msg.sender);
+        }
+        if (!_verifyProof(_proof)) {
+            revert Airdrop__NotInAllowList(msg.sender);
+        }
 
-        _mint(_recipient, _tokenId, 1, "");
+        s_claimed[msg.sender] = true;
 
-        emit Claim(_recipient, _tokenId);
+        uint256 tokenId = s_tokenCounter;
+
+        s_tokenOwners[tokenId] = msg.sender;
+        s_tokenCounter += 1;
+
+        _mint(msg.sender, tokenId, 1, "");
+        s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
+
+        emit AirdropClaimed(msg.sender, tokenId);
     }
 
-    function ownerOf(address _recipient) external view returns (address) {
-        require(s_claimed[_recipient], "Airdrop: Token not claimed");
-        return _recipient;
+    function canClaim(
+        address _owner,
+        bytes32[] calldata _proof
+    ) external view returns (bool) {
+        return
+            !s_claimed[_owner] &&
+            MerkleProof.verify(
+                _proof,
+                i_root,
+                keccak256(abi.encodePacked(_owner))
+            );
     }
 
-    function burn(address _recipient) external {
+    function ownerOf(uint256 _tokenId) external view returns (address) {
+        require(s_claimed[msg.sender], "Airdrop: Token not claimed");
+        return s_tokenOwners[_tokenId];
+    }
+
+    function burn(uint256 _tokenId) external {
         require(
-            _msgSender() == _recipient,
+            s_tokenOwners[_tokenId] == msg.sender,
             "Airdrop: Caller is not the owner of the airdrop token"
         );
-        require(s_claimed[_recipient], "Airdrop: Token is not claimed yet");
-        require(
-            !s_exists[uint256(uint160(_recipient))],
-            "Airdrop: Token is already burned"
-        );
 
-        s_exists[uint256(uint160(_recipient))] = true;
-        _burn(_recipient, uint256(uint160(_recipient)), 1);
+        s_exists[_tokenId] = false;
+        _burn(msg.sender, _tokenId, 1);
 
-        emit TransferSingle(
-            _recipient,
-            _recipient,
-            address(0),
-            uint256(uint160(_recipient)),
-            1
-        );
+        emit TokenBurned(msg.sender, _tokenId);
     }
 
+    function getTokenId(address _owner) external view returns (uint256) {
+        return s_tokenIds[_owner];
+    }
+
+    function getClaimedAddress(address _address) external view returns (bool) {
+        return s_claimed[_address];
+    }
+
+    /**
+     *
+     * @param _proof will be the hex value of the proof with the give caller address generated from the merkle tree
+     *
+     */
+
     function _verifyProof(
-        bytes32[] calldata _proof,
-        address _recipient
+        bytes32[] memory _proof
     ) internal view returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(_recipient));
-        return MerkleProof.verify(_proof, s_merkleRoot, leaf);
+        return
+            MerkleProof.verify(
+                _proof,
+                i_root,
+                keccak256(abi.encodePacked(msg.sender))
+            );
     }
 
     function _generateTokenURI(
-        address _recipient
+        address _owner
     ) internal view returns (string memory) {
         string memory baseURI = super.uri(0);
-        return string(abi.encodePacked(baseURI, _recipient));
-    }
-
-    function uri(
-        uint256 _tokenId
-    ) public view override returns (string memory) {
-        require(s_exists[_tokenId], "Airdrop: URI query for nonexistent token");
-        return s_tokenURIs[_tokenId];
-    }
-
-    function _msgSender()
-        internal
-        view
-        override(Context, ERC2771Context)
-        returns (address sender)
-    {
-        if (msg.sender == address(this)) {
-            return ERC2771Context._msgSender();
-        } else {
-            return super._msgSender();
-        }
-    }
-
-    function _msgData()
-        internal
-        view
-        override(Context, ERC2771Context)
-        returns (bytes calldata)
-    {
-        if (msg.sender == address(this)) {
-            return ERC2771Context._msgData();
-        } else {
-            return super._msgData();
-        }
-    }
-
-    function _checkNftOwnership(
-        address _owner,
-        uint256 _tokenId
-    ) internal view returns (bool) {
-        return IERC721(s_nftContract).ownerOf(_tokenId) == _owner;
+        return string(abi.encodePacked(baseURI, _owner));
     }
 }

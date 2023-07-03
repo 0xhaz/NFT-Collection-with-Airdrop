@@ -13,7 +13,7 @@ contract NFT is ERC721Enumerable, Ownable {
     uint256 private s_maxMintAmount;
     string private s_baseURI;
 
-    event Mint(uint amount, address indexed minter);
+    event Mint(uint amount, address indexed minter, uint256 indexed tokenId);
     event Withdraw(uint amount, address indexed withdrawer);
 
     constructor(
@@ -31,8 +31,8 @@ contract NFT is ERC721Enumerable, Ownable {
     }
 
     function mint(uint256 _mintAmount) public payable {
-        require(_mintAmount <= s_maxMintAmount);
-        require(_mintAmount >= s_cost);
+        require(_mintAmount <= s_maxMintAmount && _mintAmount > 0);
+
         require(msg.value >= s_cost * _mintAmount);
 
         uint256 supply = totalSupply();
@@ -48,7 +48,7 @@ contract NFT is ERC721Enumerable, Ownable {
             _safeMint(msg.sender, tokenId);
         }
 
-        emit Mint(_mintAmount, msg.sender);
+        emit Mint(_mintAmount, msg.sender, tokenId);
     }
 
     function tokenURI(
@@ -83,6 +83,14 @@ contract NFT is ERC721Enumerable, Ownable {
 
     function getCost() external view returns (uint) {
         return s_cost;
+    }
+
+    function getMaxSupply() external view returns (uint) {
+        return s_maxSupply;
+    }
+
+    function getBaseURI() external view returns (string memory) {
+        return s_baseURI;
     }
 
     function getWalletOwner(

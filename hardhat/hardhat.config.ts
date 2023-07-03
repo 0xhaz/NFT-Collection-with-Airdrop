@@ -29,19 +29,11 @@ const config: HardhatUserConfig = {
       saveDeployments: true,
       gasPrice: 8000000000,
     },
-    goerli: {
+    sepolia: {
       url: SEPOLIA_URL,
-      accounts: [PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY!],
       chainId: 5,
       allowUnlimitedContractSize: true,
-      namedAccounts: {
-        deployer: {
-          default: 0,
-        },
-        feeAccount: {
-          default: 1,
-        },
-      },
     },
   },
   typechain: {
@@ -93,6 +85,12 @@ const config: HardhatUserConfig = {
     },
     user1: {
       default: 3,
+    },
+    user2: {
+      default: 4,
+    },
+    user3: {
+      default: 5,
     },
   },
 };
