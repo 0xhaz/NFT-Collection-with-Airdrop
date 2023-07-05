@@ -116,9 +116,13 @@ describe("GeneratedNFT", () => {
         result = await transaction.wait();
       });
 
-      it("returns owner", async () => {
+      it("returns tokenURI, totalSupply and owner", async () => {
         result = await generatedNFT.ownerOf(1);
         expect(result).to.be.equal(minter.address);
+        result = await generatedNFT.tokenURI("1");
+        expect(result).to.be.equal(URL);
+        result = await generatedNFT.totalSupply();
+        expect(result).to.be.equal(1);
       });
     });
   });
