@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { Airdrop, GeneratedNFT } from "../typechain";
+import { NFT, Airdrop, GeneratedNFT } from "../typechain";
 import { generateMerkleTree } from "../scripts/00-generate-merkle-tree";
 import { MerkleTree } from "merkletreejs";
 import { keccak256 } from "ethers/lib/utils";
@@ -14,6 +14,7 @@ const ether = tokens;
 
 describe("GeneratedNFT", () => {
   let airdrop: Airdrop;
+  let nft: NFT;
   let generatedNFT: GeneratedNFT;
   let tree: MerkleTree;
   let deployer: SignerWithAddress,
@@ -31,7 +32,30 @@ describe("GeneratedNFT", () => {
   const root =
     "0x99754cefd021c036abab5b3610791ede544baa906a4bcd7ed6cc35f9296f2c27";
 
-  beforeEach(async () => {
+  before(async () => {
+    const NAME = "Dapp Punks";
+    const SYMBOL = "DPX";
+    const COST = ether(10);
+    const MAX_SUPPLY = 10000;
+    const MAX_AMOUNT = 10;
+    const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
+
+    [deployer, minter] = await ethers.getSigners();
+
+    const NFT = await ethers.getContractFactory("NFT");
+    nft = await NFT.deploy(
+      NAME,
+      SYMBOL,
+      COST,
+      MAX_SUPPLY,
+      MAX_AMOUNT,
+      BASE_URI
+    );
+    await nft.deployed();
+
+    transaction = await nft.connect(minter).mint(1, { value: COST });
+    result = await transaction.wait();
+
     tree = await generateMerkleTree();
 
     [deployer, minter, user1] = await ethers.getSigners();
@@ -39,16 +63,27 @@ describe("GeneratedNFT", () => {
     // console.log("Minter address: ", minter.address);
 
     const airdropFactory = await ethers.getContractFactory("Airdrop");
-    airdrop = await airdropFactory.deploy(root, nftTokenURIs);
+    airdrop = await airdropFactory.deploy(root, nftTokenURIs, nft.address);
     await airdrop.deployed();
 
+    const proof = tree.getHexProof(keccak256(minter.address));
+    transaction = await airdrop.connect(minter).claimAirdrop(proof);
+    result = await transaction.wait();
+
+    expect(await airdrop.balanceOf(minter.address, 0)).to.equal(1);
+  });
+
+  beforeEach(async () => {
     const GeneratedNFT = await ethers.getContractFactory("GeneratedNFT");
     generatedNFT = await GeneratedNFT.deploy(airdrop.address, NAME, SYMBOL);
     await generatedNFT.deployed();
 
-    const proof = tree.getHexProof(keccak256(minter.address));
-    transaction = await airdrop.connect(minter).claimAirdrop(proof);
-    result = await transaction.wait(1);
+    transaction = await airdrop
+      .connect(minter)
+      .setApprovalForAll(generatedNFT.address, true);
+    result = await transaction.wait();
+
+    await airdrop.connect(deployer).setApprovedContract(generatedNFT.address);
   });
 
   describe("GeneratedNFT Deployment", () => {
@@ -59,22 +94,30 @@ describe("GeneratedNFT", () => {
     it("Should have a symbol", async () => {
       expect(await generatedNFT.symbol()).to.equal(SYMBOL);
     });
+
+    it("should approve GeneratedNFT contract", async () => {
+      let bool = await airdrop.isApprovedForAll(
+        minter.address,
+        generatedNFT.address
+      );
+
+      expect(bool).to.be.true;
+    });
   });
 
   describe("GeneratedNFT minting", () => {
     describe("Succes", () => {
       beforeEach(async () => {
-        transaction = await airdrop
-          .connect(minter)
-          .setApprovalForAll(generatedNFT.address, true);
-        result = await transaction.wait(1);
-
-        transaction = await generatedNFT.connect(minter).mint(URL);
+        // console.log(
+        //   "Balance token: ",
+        //   await airdrop.balanceOf(minter.address, 0)
+        // );
+        transaction = await generatedNFT.connect(minter).mint(1, URL);
         result = await transaction.wait();
       });
 
       it("returns owner", async () => {
-        const result = await generatedNFT.ownerOf("1");
+        result = await generatedNFT.ownerOf(1);
         expect(result).to.be.equal(minter.address);
       });
     });

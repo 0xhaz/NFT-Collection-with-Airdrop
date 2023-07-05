@@ -3,13 +3,15 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
 import "./Airdrop.sol";
 
-contract GeneratedNFT is ERC721URIStorage, Ownable {
+contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
+    using Strings for uint256;
     using Counters for Counters.Counter;
     Counters.Counter public s_tokenIds;
 
@@ -20,6 +22,16 @@ contract GeneratedNFT is ERC721URIStorage, Ownable {
 
     event Mint(address indexed minter, uint256 indexed tokenId);
 
+    modifier airdropOwner() {
+        uint256 tokenId = airdropTokenId();
+        require(
+            airdropInterface.balanceOf(msg.sender, tokenId) > 0,
+            "GeneratedNFT: There is no token to claim"
+        );
+        require(!isTokenBurned(msg.sender), "GeneratedNFT: Token is burned");
+        _;
+    }
+
     constructor(
         address _airdropAddress,
         string memory _name,
@@ -29,33 +41,33 @@ contract GeneratedNFT is ERC721URIStorage, Ownable {
         airdropInterface = Airdrop(_airdropAddress);
     }
 
-    function mint(string memory _tokenURI) public {
-        uint256 tokenId = airdropInterface.getTokenId(msg.sender);
+    //    mint erc721 with tokenURI and burn erc1155
+    function mint(
+        uint256 _amount,
+        string memory _tokenURI
+    ) external airdropOwner {
+        uint256 tokenId = airdropTokenId();
+        uint256 balance = airdropInterface.balanceOf(msg.sender, tokenId);
+        require(_amount <= balance, "GeneratedNFT: Not enough tokens");
 
-        address erc1155Owner = airdropInterface.ownerOf(tokenId);
-        require(
-            erc1155Owner == msg.sender,
-            "GeneratedNFT: Caller does not own airdrop tokens"
-        );
-        require(
-            tokenId != 0,
-            "GeneratedNFT: Caller does not have airdrop tokens"
-        );
-        require(
-            !s_isTokenBurned[msg.sender],
-            "GeneratedNFT: Airdrop token is already burned"
+        airdropInterface.safeTransferFrom(
+            msg.sender,
+            address(this),
+            airdropTokenId(),
+            _amount,
+            ""
         );
 
-        airdropInterface.burn(tokenId);
         s_isTokenBurned[msg.sender] = true;
 
-        s_tokenIds.increment();
-
-        uint256 newItemId = s_tokenIds.current();
-        _safeMint(msg.sender, newItemId);
-        _setTokenURI(newItemId, _tokenURI);
-
-        emit Mint(msg.sender, newItemId);
+        for (uint256 i = 0; i < _amount; i++) {
+            s_tokenIds.increment();
+            uint256 newItemId = s_tokenIds.current();
+            _mint(msg.sender, newItemId);
+            _setTokenURI(newItemId, _tokenURI);
+            s_ownerWallet[msg.sender] = newItemId;
+            emit Mint(msg.sender, newItemId);
+        }
     }
 
     function setAirDropAddress(address _airdropAddress) external onlyOwner {
@@ -89,5 +101,25 @@ contract GeneratedNFT is ERC721URIStorage, Ownable {
 
     function airdropTokenId() internal view returns (uint256) {
         return airdropInterface.getTokenId(msg.sender);
+    }
+
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155Received.selector;
+    }
+
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] calldata,
+        uint256[] calldata,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC1155BatchReceived.selector;
     }
 }

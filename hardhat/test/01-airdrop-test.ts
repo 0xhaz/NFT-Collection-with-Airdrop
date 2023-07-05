@@ -1,18 +1,51 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { Airdrop } from "../typechain";
+import { Airdrop, NFT } from "../typechain";
 import { generateMerkleTree } from "../scripts/00-generate-merkle-tree";
 import { MerkleTree } from "merkletreejs";
 import { keccak256 } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
+const tokens = (n: number) => {
+  return ethers.utils.parseUnits(n.toString(), "ether");
+};
+
+const ether = tokens;
+
 describe("Airdrop", () => {
   let airdrop: Airdrop;
+  let nft: NFT;
   let tree: MerkleTree;
   let deployer: SignerWithAddress;
+  let minter: SignerWithAddress;
   let receiver: SignerWithAddress;
   let user1: SignerWithAddress;
   let transaction: any, result: any;
+
+  before(async () => {
+    const NAME = "Dapp Punks";
+    const SYMBOL = "DPX";
+    const COST = ether(10);
+    const MAX_SUPPLY = 10000;
+    const MAX_AMOUNT = 10;
+    const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
+
+    [deployer, minter] = await ethers.getSigners();
+
+    const NFT = await ethers.getContractFactory("NFT");
+    nft = await NFT.deploy(
+      NAME,
+      SYMBOL,
+      COST,
+      MAX_SUPPLY,
+      MAX_AMOUNT,
+      BASE_URI
+    );
+    await nft.deployed();
+
+    transaction = await nft.connect(minter).mint(1, { value: COST });
+    result = await transaction.wait();
+  });
 
   beforeEach(async () => {
     [deployer, receiver, user1] = await ethers.getSigners();
@@ -21,7 +54,7 @@ describe("Airdrop", () => {
     const nftTokenURIs =
       "ipfs://QmT9JJuUya27XKThLvnsB7r1BxTHAyAwRaZc56Ji54h3Fx/";
     const airdropFactory = await ethers.getContractFactory("Airdrop");
-    airdrop = await airdropFactory.deploy(root, nftTokenURIs);
+    airdrop = await airdropFactory.deploy(root, nftTokenURIs, nft.address);
     await airdrop.deployed();
     tree = await generateMerkleTree();
   });
@@ -40,9 +73,11 @@ describe("Airdrop", () => {
       it("should return false if the proof is valid but already claimed", async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
-        expect(
-          await airdrop.connect(receiver).canClaim(receiver.address, proof)
-        ).to.be.false;
+        transaction = await airdrop
+          .connect(receiver)
+          .canClaim(receiver.address, proof);
+
+        expect(transaction).to.be.false;
       });
 
       it("should return false if the proof is not valid and haven't been claimed", async () => {
@@ -73,7 +108,7 @@ describe("Airdrop", () => {
       it("should emit AirdropClaimed event", async () => {
         await expect(transaction)
           .to.emit(airdrop, "AirdropClaimed")
-          .withArgs(receiver.address, 0);
+          .withArgs(receiver.address, 1);
       });
     });
 
@@ -128,7 +163,7 @@ describe("Airdrop", () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
         await expect(airdrop.connect(user1).burn(0)).to.be.revertedWith(
-          "Airdrop: Caller is not the owner of the airdrop token"
+          "Airdrop: caller is not the owner of the token"
         );
       });
     });
