@@ -6,6 +6,21 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
-  }
+    "resolveJsonModule": true,
+    "incremental": true,
+    "moduleResolution": "node",
+    "isolatedModules": false,
+    "jsx": "preserve",
+    "allowJs": true,
+    "noEmit": true
+  },
+  "include": [
+    "./scripts",
+    "./test",
+    "./deploy",
+    "./deploy-helpers",
+    "utils/99-save-frontend-files.ts"
+  ],
+  "files": ["./hardhat.config.ts", "./hardhat-helper.ts"],
+  "exclude": ["node_modules"]
 }

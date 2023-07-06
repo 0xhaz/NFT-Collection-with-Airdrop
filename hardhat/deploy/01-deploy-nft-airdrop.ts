@@ -1,7 +1,7 @@
 import { DeployFunction, DeployResult } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { developmentChains, networkConfig } from "../hardhat-helper";
-import { saveFrontEndFiles, saveConfig } from "./99-save-frontend-files";
+import { saveFrontEndFiles, saveConfig } from "../utils/99-save-frontend-files";
 import { network, ethers } from "hardhat";
 import verify from "../utils/verify";
 import { generateMerkleTree } from "../scripts/00-generate-merkle-tree";
@@ -41,8 +41,10 @@ const deployAirdrop: DeployFunction = async (
     airdrop.address
   )) as Airdrop;
 
+  const contracts = [{ name: "Airdrop", address: airdropInstance.address }];
+
   saveFrontEndFiles(airdropInstance, "Airdrop");
-  saveConfig(airdropInstance, "Airdrop");
+  saveConfig(contracts);
 
   log(`Deployed Airdrop to ${airdropInstance.address}`);
 

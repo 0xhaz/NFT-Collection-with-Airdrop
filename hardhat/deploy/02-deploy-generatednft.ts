@@ -1,7 +1,7 @@
 import { DeployFunction, DeployResult } from "hardhat-deploy/dist/types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { developmentChains, networkConfig } from "../hardhat-helper";
-import { saveFrontEndFiles, saveConfig } from "./99-save-frontend-files";
+import { saveFrontEndFiles, saveConfig } from "../utils/99-save-frontend-files";
 import { ethers, network } from "hardhat";
 import verify from "../utils/verify";
 import { GeneratedNFT } from "../typechain";
@@ -38,8 +38,15 @@ const deployGeneratedNFT: DeployFunction = async (
     generatedNft.address
   )) as GeneratedNFT;
 
+  const contracts = [
+    {
+      name: "GeneratedNFT",
+      address: generatedNftInstance.address,
+    },
+  ];
+
   saveFrontEndFiles(generatedNftInstance, "GeneratedNFT");
-  saveConfig(generatedNftInstance, "GeneratedNFT");
+  saveConfig(contracts);
 
   log(`Deployed GeneratedNFT to ${generatedNftInstance.address}`);
 

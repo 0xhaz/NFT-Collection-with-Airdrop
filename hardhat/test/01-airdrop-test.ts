@@ -13,8 +13,8 @@ const tokens = (n: number) => {
 const ether = tokens;
 
 describe("Airdrop", () => {
-  let airdrop: Airdrop;
-  let nft: NFT;
+  let airdrop: any;
+  let nft: any;
   let tree: MerkleTree;
   let deployer: SignerWithAddress;
   let minter: SignerWithAddress;

@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { developmentChains, networkConfig } from "../hardhat-helper";
 import { ethers, network } from "hardhat";
 import verify from "../utils/verify";
-import { saveFrontEndFiles, saveConfig } from "./99-save-frontend-files";
+import { saveFrontEndFiles, saveConfig } from "../utils/99-save-frontend-files";
 import { NFT, NFT__factory } from "../typechain";
 
 type Contract = NFT;
@@ -40,8 +40,15 @@ const deployNFT: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
     nftContract.address
   )) as NFT;
 
+  const contracts = [
+    {
+      name: "NFT",
+      address: nftInstance.address,
+    },
+  ];
+
   saveFrontEndFiles(nftInstance, contractName);
-  saveConfig(nftInstance, contractName);
+  saveConfig(contracts);
 
   log(`Deployed NFT to ${nftInstance.address}`);
   log("---------------------------------------------------------------");

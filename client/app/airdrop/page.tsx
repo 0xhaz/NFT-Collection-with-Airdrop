@@ -16,9 +16,9 @@ const Airdrop = () => {
 
   return (
     <>
-      <div className="mt-10 lg:m-0 flex flex-1 flex-col items-center space-y-6 text-center lg:space-y-0 lg:justify-center">
+      <div className="mt-10 lg:m-0 flex flex-1 flex-col items-center space-y-6 text-center lg:space-y-0 lg:mt-32 lg:justify-start">
         <Image
-          className="w-80 object-contain pb-10 lg:h-50 lg:w-96"
+          className="w-80 object-contain pb-10 lg:h-50 lg:w-86"
           src="/assets/airdrop.gif"
           alt="NFT Airdrop"
           width={500}
@@ -39,7 +39,7 @@ const Airdrop = () => {
             btnType="button"
             title="Check Eligibility"
             handleClick={checkEligibility}
-            styles="w-[500px]"
+            styles="w-[500px] text-2xl"
           />
 
           {isEligible && (
@@ -47,7 +47,7 @@ const Airdrop = () => {
               btnType="submit"
               title="Claim Airdrop"
               handleClick={claimAirDrop}
-              styles="w-[500px]"
+              styles="w-[500px] text-2xl"
             />
           )}
         </div>

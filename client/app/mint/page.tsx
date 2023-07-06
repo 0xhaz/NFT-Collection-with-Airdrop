@@ -22,6 +22,8 @@ const Mint = () => {
             <input
               type="number"
               placeholder="Enter Amount"
+              min={1}
+              max={10}
               className="w-80 h-10 bg-gray-100 rounded-full text-center text-gray-600 text-2xl font-bold lg:w-96"
             />
           </div>

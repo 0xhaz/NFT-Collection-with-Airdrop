@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { NFT, Airdrop, GeneratedNFT } from "../typechain";
+import { NFT } from "../typechain";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const tokens = (n: number) => {
@@ -17,7 +17,7 @@ describe("NFT", () => {
   const MAX_AMOUNT = 10;
   const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
 
-  let nft: NFT, airdrop: Airdrop, generatedNFT: GeneratedNFT;
+  let nft: any;
 
   let deployer: SignerWithAddress,
     minter: SignerWithAddress,
@@ -26,8 +26,8 @@ describe("NFT", () => {
   beforeEach(async () => {
     [deployer, minter, user1] = await ethers.getSigners();
 
-    const NFT = await ethers.getContractFactory("NFT");
-    nft = await NFT.deploy(
+    const NFTContract = await ethers.getContractFactory("NFT");
+    nft = await NFTContract.deploy(
       NAME,
       SYMBOL,
       COST,
