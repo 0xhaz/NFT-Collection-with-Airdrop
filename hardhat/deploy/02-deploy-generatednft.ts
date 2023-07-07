@@ -22,8 +22,6 @@ const deployGeneratedNFT: DeployFunction = async (
 
   const NAME = "AI Punks";
   const SYMBOL = "AIX";
-  const COST = ethers.utils.parseUnits("0.1", "ether");
-  const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
 
   const args = [airdropAddress, NAME, SYMBOL];
 
