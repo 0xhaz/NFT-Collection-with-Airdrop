@@ -1,6 +1,9 @@
-import React from "react";
+"use client";
+import { useAccount } from "../context";
 
 const Navbar = () => {
+  const { account, connect, disconnect } = useAccount();
+
   return (
     <div>
       <header className="items-center flex justify-between">
@@ -11,12 +14,22 @@ const Navbar = () => {
           </span>{" "}
           Collection
         </h1>
-        <button className="rounded-full bg-rose-400 text-white px-4 py-2 text-xs font-bold lg:px-5 lg:py-3 lg:text-base">
-          Sign in
+        <button
+          onClick={() => (account ? disconnect() : connect())}
+          className="rounded-full bg-rose-400 text-white px-4 py-2 text-xs font-bold lg:px-5 lg:py-3 lg:text-base"
+        >
+          {account ? "Sign Out" : "Sign in"}
         </button>
       </header>
 
       <hr className="my-2 border" />
+
+      {account && (
+        <p className="text-right text-rose-400">
+          {account.substring(0, 5)}...
+          {account.substring(account.length - 5)}
+        </p>
+      )}
     </div>
   );
 };

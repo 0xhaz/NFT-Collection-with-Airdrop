@@ -1,5 +1,12 @@
 import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
+import {
+  AccountProvider,
+  ContractProvider,
+  NFTDataProvider,
+  NFTAirdropProvider,
+  GeneratedNFTProvider,
+} from "./context";
 import "./globals.css";
 
 export const metadata = {
@@ -15,13 +22,23 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="flex h-screen flex-col lg:grid lg:grid-cols-10">
-          <Sidebar />
-          <div className="flex flex-1 flex-col p-12 lg:col-span-6">
-            <Navbar />
-            {children}
-          </div>
-        </div>
+        <AccountProvider>
+          <ContractProvider>
+            <NFTDataProvider>
+              <NFTAirdropProvider>
+                <GeneratedNFTProvider>
+                  <div className="flex h-screen flex-col lg:grid lg:grid-cols-10">
+                    <Sidebar />
+                    <div className="flex flex-1 flex-col p-12 lg:col-span-6">
+                      <Navbar />
+                      {children}
+                    </div>
+                  </div>
+                </GeneratedNFTProvider>
+              </NFTAirdropProvider>
+            </NFTDataProvider>
+          </ContractProvider>
+        </AccountProvider>
       </body>
     </html>
   );

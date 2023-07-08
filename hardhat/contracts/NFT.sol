@@ -2,16 +2,22 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NFT is ERC721Enumerable, Ownable {
+    using Counters for Counters.Counter;
     using Strings for uint256;
+    Counters.Counter private s_tokenIds;
 
     string private s_baseExtension = ".json";
     uint256 private s_cost;
     uint256 private s_maxSupply;
     uint256 private s_maxMintAmount;
     string private s_baseURI;
+    uint256 private s_totalSupply;
+
+    mapping(uint256 => string) private s_tokenURIs;
 
     event Mint(uint amount, address indexed minter, uint256 indexed tokenId);
     event Withdraw(uint amount, address indexed withdrawer);
@@ -28,26 +34,35 @@ contract NFT is ERC721Enumerable, Ownable {
         s_maxSupply = _maxSupply;
         s_maxMintAmount = _maxMintAmount;
         s_baseURI = _baseURI;
+        s_totalSupply = 0;
     }
 
     function mint(uint256 _mintAmount) public payable {
-        require(_mintAmount <= s_maxMintAmount && _mintAmount > 0);
+        require(
+            _mintAmount <= s_maxMintAmount,
+            "Mint amount exceeds max amount"
+        );
+        require(_mintAmount > 0, "Mint amount must be greater than 0");
 
-        require(msg.value >= s_cost * _mintAmount);
+        uint256 totalCost = _mintAmount * s_cost;
+        require(
+            msg.value >= totalCost,
+            "Ether value sent is not correct for mint amount"
+        );
 
-        uint256 supply = totalSupply();
+        uint256 supply = s_tokenIds.current();
         uint256 tokenId;
 
         for (uint256 i; i < _mintAmount; i++) {
-            tokenId = supply + i + 1;
+            tokenId = supply + i;
 
             while (_exists(tokenId)) {
                 tokenId++;
             }
 
-            _safeMint(msg.sender, tokenId);
+            _mint(msg.sender, tokenId);
+            s_totalSupply++;
         }
-
         emit Mint(_mintAmount, msg.sender, tokenId);
     }
 
@@ -77,12 +92,16 @@ contract NFT is ERC721Enumerable, Ownable {
         s_cost = _newCost;
     }
 
-    function getMaxMintAmount() external view returns (uint) {
+    function getMaxMintAmount() external view returns (uint256) {
         return s_maxMintAmount;
     }
 
-    function getCost() external view returns (uint) {
+    function getCost() external view returns (uint256) {
         return s_cost;
+    }
+
+    function getTotalSupply() external view returns (uint256) {
+        return s_totalSupply;
     }
 
     function getMaxSupply() external view returns (uint) {

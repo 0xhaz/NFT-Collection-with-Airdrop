@@ -1,3 +1,4 @@
+"use client";
 import { createContext, useContext, useState, useEffect } from "react";
 import { ethers } from "ethers";
 import Web3Modal, { local } from "web3modal";
@@ -12,6 +13,7 @@ type AccountContextValue = {
   account?: Account;
   accountProvider: AccountWeb3Provider;
   connect: () => void;
+  disconnect: () => void;
 };
 
 type AccountProviderProps = {
@@ -64,7 +66,10 @@ export const AccountProvider = ({
         method: "net_version",
       });
 
-      if (networkId !== process.env.NEXT_PUBLIC_NETWORK_ID) {
+      if (
+        networkId !== process.env.NEXT_PUBLIC_NETWORK_ID &&
+        process.env.NEXT_PUBLIC_ENVIRONMENT !== "local"
+      ) {
         const confirmed = window.confirm(
           "Please switch to the Sepolia network"
         );
@@ -98,6 +103,18 @@ export const AccountProvider = ({
     }
   };
 
+  const disconnect = async () => {
+    try {
+      const modal = getWeb3Modal();
+      modal.clearCachedProvider();
+      setAccount(null);
+      setAccountProvider(null);
+      setSigner(null);
+    } catch (error) {
+      console.log("Error disconnecting wallet: ", error);
+    }
+  };
+
   const getWalletProvider = async () => {
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -119,6 +136,7 @@ export const AccountProvider = ({
         account,
         accountProvider,
         connect,
+        disconnect,
       }}
     >
       {children}

@@ -1,3 +1,4 @@
+"use client";
 import { useContext, useCallback, createContext } from "react";
 import { ethers } from "ethers";
 import { useContract, useAccount } from "./index";

@@ -89,16 +89,13 @@ contract Airdrop is ERC1155, Ownable {
         }
     }
 
-    function canClaim(
-        address _owner,
-        bytes32[] calldata _proof
-    ) external view returns (bool) {
+    function canClaim(bytes32[] calldata _proof) external view returns (bool) {
         return
-            !s_claimed[_owner] &&
+            !s_claimed[msg.sender] &&
             MerkleProof.verify(
                 _proof,
                 i_root,
-                keccak256(abi.encodePacked(_owner))
+                keccak256(abi.encodePacked(msg.sender))
             );
     }
 

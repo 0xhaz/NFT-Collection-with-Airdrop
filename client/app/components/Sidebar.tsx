@@ -78,7 +78,7 @@ const Sidebar = () => {
           </h2>
         </div>
 
-        <div className="flex  mb-10 lg:mb-0 lg:flex-col justify-around items-stretch outline-none gap-3 mt-12">
+        <div className="flex  mb-10 lg:mb-0 lg:flex-col justify-around items-stretch outline-none gap-2 mt-12">
           {MENU.map(item => (
             <div
               key={item.name}

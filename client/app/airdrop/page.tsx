@@ -1,18 +1,86 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CustomButton from "../components/CustomButton";
+import { useAccount, useNFTAirdrop } from "../context";
+import Loader from "../components/Loader";
 import Image from "next/image";
+import { keccak256 } from "ethers/lib/utils";
+import { generateMerkleTree, verifyProof } from "../utils/generate-merkle-tree";
+import { MerkleTree } from "merkletreejs";
+import { ethers } from "ethers";
+
+interface TreeProps {
+  treeInstance: MerkleTree | null;
+}
+
+type Proof = ethers.Bytes[];
 
 const Airdrop = () => {
   const [isEligible, setIsEligible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [proof, setProof] = useState<Proof>([]);
+  const [isButtonClicked, setIsButtonClicked] = useState(false);
+  const { account } = useAccount();
+  const { canClaim, claimAirdrop, merkleTree } = useNFTAirdrop();
 
-  const checkEligibility = () => {
-    setIsEligible(true);
+  const generateProof = async () => {
+    if (account) {
+      const tree = await generateMerkleTree();
+      const proof = tree.getHexProof(keccak256(account));
+      const convertedProof: Proof = proof.map(item =>
+        ethers.utils.arrayify(item)
+      );
+      // console.log("Proof: ", convertedProof);
+      setProof(convertedProof);
+      return convertedProof;
+    }
   };
 
-  const claimAirDrop = () => {
-    setIsEligible(false);
+  const checkEligibility = async () => {
+    setLoading(true);
+
+    try {
+      if (account) {
+        const eligible = verifyProof(
+          proof.map(item => ethers.utils.hexlify(item)),
+          account,
+          merkleTree as MerkleTree
+        );
+        console.log("Eligible: ", eligible);
+        setIsEligible(eligible);
+        setIsButtonClicked(true);
+      }
+    } catch (error) {
+      console.log("Error checking eligibility: ", error);
+    }
+    setLoading(false);
   };
+
+  const claimAirDrop = async () => {
+    setLoading(true);
+    try {
+      if (proof.length > 0) {
+        await claimAirdrop(proof);
+        setIsEligible(false);
+      }
+    } catch (error) {
+      console.log("Error claiming airdrop: ", error);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!account) return;
+    if (isButtonClicked) {
+      checkEligibility();
+    }
+  }, [isButtonClicked]);
+
+  useEffect(() => {
+    if (!account) return;
+
+    generateProof();
+  }, [account]);
 
   return (
     <>
@@ -29,11 +97,11 @@ const Airdrop = () => {
         </h1>
 
         <div className="flex flex-col justify-center ">
-          {isEligible ? (
+          {isEligible && isButtonClicked ? (
             <p>Congratulations! You are eligible for the Airdrop.</p>
-          ) : (
+          ) : isButtonClicked && !isEligible ? (
             <p>Sorry! You are not eligible for the Airdrop.</p>
-          )}
+          ) : null}
 
           <CustomButton
             btnType="button"
@@ -52,6 +120,8 @@ const Airdrop = () => {
           )}
         </div>
       </div>
+
+      {loading && <Loader />}
     </>
   );
 };

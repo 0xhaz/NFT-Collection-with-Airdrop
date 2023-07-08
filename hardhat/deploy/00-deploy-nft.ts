@@ -21,7 +21,7 @@ const deployNFT: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   const NAME = "Dapp Punks";
   const SYMBOL = "DPX";
-  const COST = ethers.utils.parseUnits("0.001", "ether");
+  const COST = ethers.utils.parseUnits("0.01", "ether");
   const MAX_SUPPLY = 10000;
   const MAX_AMOUNT = 10;
   const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
@@ -55,6 +55,8 @@ const deployNFT: DeployFunction = async (hre: HardhatRuntimeEnvironment) => {
 
   if (!isDevelopment && process.env.ETHERSCAN_API_KEY) {
     await verify(nftInstance.address, args);
+    log(`Verified NFT on Etherscan`);
+    log("---------------------------------------------------------------");
   }
 };
 

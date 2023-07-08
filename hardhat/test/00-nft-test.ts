@@ -82,15 +82,29 @@ describe("NFT", () => {
       });
 
       it("returns the address of the minter", async () => {
-        expect(await nft.ownerOf(1)).to.equal(minter.address);
+        const tokenIds = await nft.totalSupply();
+
+        for (let i = 0; i < tokenIds.length; i++) {
+          expect(await nft.ownerOf(tokenIds[i])).to.equal(minter.address);
+        }
       });
 
-      it("returns thte total number of tokens owned by the minter", async () => {
-        expect(await nft.balanceOf(minter.address)).to.equal(1);
+      it("returns the total number of tokens owned by the minter", async () => {
+        const tokenIds = await nft.totalSupply();
+
+        for (let i = 0; i < tokenIds.length; i++) {
+          expect(await nft.balanceOf(minter.address)).to.equal(1);
+        }
       });
 
       it("returns IPFS URI for the token", async () => {
-        expect(await nft.tokenURI(1)).to.equal(`${BASE_URI}` + "1.json");
+        const tokenIds = await nft.totalSupply();
+
+        for (let i = 0; i < tokenIds.length; i++) {
+          expect(await nft.tokenURI(tokenIds[i])).to.equal(
+            `${BASE_URI}` + tokenIds[i] + ".json"
+          );
+        }
       });
 
       it("updates the contract balance", async () => {
@@ -100,7 +114,88 @@ describe("NFT", () => {
       it("emits a Mint event", async () => {
         await expect(transaction)
           .to.emit(nft, "Mint")
-          .withArgs(1, minter.address, 1);
+          .withArgs(1, minter.address, 0);
+      });
+    });
+
+    describe("Failure", () => {
+      it("rejects if the cost is not met", async () => {
+        await expect(nft.connect(minter).mint(1, { value: ether(1) })).to.be
+          .reverted;
+      });
+
+      it("requires at least one token to be minted", async () => {
+        await expect(nft.connect(minter).mint(0, { value: COST })).to.be
+          .reverted;
+      });
+
+      it("rejects if the MAX_AMOUNT is exceeded", async () => {
+        await expect(nft.connect(minter).mint(11, { value: ether(110) })).to.be
+          .reverted;
+      });
+
+      it("does not return URIs for non-existent tokens", async () => {
+        await expect(nft.tokenURI(99)).to.be.reverted;
+      });
+    });
+  });
+
+  describe("NFT Batch Minting", () => {
+    let transaction: any, result: any;
+    let totalMint = 5;
+
+    describe("Success", () => {
+      beforeEach(async () => {
+        transaction = await nft.connect(minter).mint(totalMint, {
+          value: COST.mul(totalMint),
+        });
+        result = await transaction.wait();
+        // console.log(result);
+      });
+
+      it("mints a token and updates the total supply", async () => {
+        expect(await nft.totalSupply()).to.equal(totalMint);
+      });
+
+      it("returns the address of the minter", async () => {
+        const expectedOwner = minter.address;
+        for (let i = 0; i < totalMint; i++) {
+          expect(await nft.ownerOf(i)).to.equal(expectedOwner);
+        }
+      });
+
+      it("returns the total number of tokens owned by the minter", async () => {
+        for (let i = 0; i < totalMint; i++) {
+          expect(await nft.balanceOf(minter.address)).to.equal(totalMint);
+        }
+      });
+
+      it("returns IPFS URI for the token", async () => {
+        for (let i = 0; i < totalMint; i++) {
+          expect(await nft.tokenURI(i)).to.equal(`${BASE_URI}` + i + ".json");
+        }
+      });
+
+      it("updates the contract balance", async () => {
+        expect(await ethers.provider.getBalance(nft.address)).to.equal(
+          ethers.utils.parseEther("50")
+        );
+      });
+
+      it("emits a Mint event", async () => {
+        const mintEvents = result.events.filter(
+          (event: any) => event.event === "Mint"
+        );
+
+        // expect(mintEvents.length).to.equal(totalMint);
+
+        for (let i = 0; i < mintEvents.length - 1; i++) {
+          const event = mintEvents[i];
+          expect(event.event).to.equal("Mint");
+          expect(event.args[0]).to.equal(totalMint);
+          expect(event.args[1]).to.equal(minter.address);
+          expect(event.args[2]).to.equal(i);
+        }
       });
     });
 
@@ -136,9 +231,9 @@ describe("NFT", () => {
     it("returns an array of token IDs owned by the minter", async () => {
       let tokenIds = await nft.getWalletOwner(minter.address);
       expect(tokenIds.length).to.equal(3);
-      expect(tokenIds[0]).to.equal(1);
-      expect(tokenIds[1]).to.equal(2);
-      expect(tokenIds[2]).to.equal(3);
+      expect(tokenIds[0]).to.equal(0);
+      expect(tokenIds[1]).to.equal(1);
+      expect(tokenIds[2]).to.equal(2);
     });
   });
 

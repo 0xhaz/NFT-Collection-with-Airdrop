@@ -1,3 +1,4 @@
+"use client";
 import { useContext, useCallback, createContext } from "react";
 import { ethers } from "ethers";
 import { useContract, useAccount } from "./index";
@@ -5,13 +6,15 @@ import { useContract, useAccount } from "./index";
 type MintAmount = ethers.BigNumber;
 
 interface NFTContextProps {
-  mintNft: (mintAmount: MintAmount) => Promise<void>;
+  mintNft: (mintAmount: number) => Promise<void>;
   getNft: (owner: string) => Promise<number[]>;
+  getTotalSupply: () => Promise<number>;
 }
 
 export const NFTDataContext = createContext<NFTContextProps>({
   mintNft: async () => {},
   getNft: async () => [],
+  getTotalSupply: async () => 0,
 });
 
 export type NFTDataProviderProps = {
@@ -25,11 +28,17 @@ export const NFTDataProvider = ({
   const { account, accountProvider } = useAccount();
 
   const mintNft = useCallback(
-    async (mintAmount: MintAmount) => {
+    async (mintAmount: number) => {
       const signer = accountProvider?.getSigner();
       const contractWithSigner = nftContract?.connect(signer);
+      const COST = await nftContract?.getCost();
+
       try {
-        await contractWithSigner?.mint(mintAmount);
+        const costBigNumber = ethers.BigNumber.from(COST.toString());
+        const transaction = await contractWithSigner?.mint(mintAmount, {
+          value: costBigNumber.mul(mintAmount),
+        });
+        await transaction?.wait();
       } catch (error) {
         console.log("Error minting NFT: ", error);
         throw error;
@@ -49,11 +58,22 @@ export const NFTDataProvider = ({
     }
   }, [nftContract]);
 
+  const getTotalSupply = useCallback(async () => {
+    try {
+      const totalSupply = await nftContract?.getTotalSupply();
+      return totalSupply || [];
+    } catch (error) {
+      console.log("Error getting NFT: ", error);
+      throw error;
+    }
+  }, [nftContract]);
+
   return (
     <NFTDataContext.Provider
       value={{
         mintNft,
         getNft,
+        getTotalSupply,
       }}
     >
       {children}
@@ -61,4 +81,4 @@ export const NFTDataProvider = ({
   );
 };
 
-export const useNFTData = () => useContext(NFTDataContext);
+export const useNFT = () => useContext(NFTDataContext);

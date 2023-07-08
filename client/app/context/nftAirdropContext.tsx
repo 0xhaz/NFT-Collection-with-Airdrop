@@ -1,14 +1,25 @@
-import { createContext, useContext, useCallback } from "react";
+"use client";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
 import { ethers } from "ethers";
+import { MerkleTree } from "merkletreejs";
+import { generateMerkleTree } from "../utils/generate-merkle-tree";
+import keccak256 from "ethers/lib/utils";
 import { useContract, useAccount, NFTDataProvider } from "./index";
 
 type Proof = ethers.Bytes[];
 
 interface AirdropContextProps {
   claimAirdrop: (proof: Proof) => Promise<void>;
-  canClaim: (owner: string, proof: Proof) => Promise<boolean>;
+  canClaim: (proof: Proof) => Promise<boolean>;
   burnToken: (tokenId: number) => Promise<void>;
   getOwnedTokens: (owner: string) => Promise<number[]>;
+  merkleTree: MerkleTree | null;
 }
 
 export const NFTAirdropDataContext = createContext<AirdropContextProps>({
@@ -16,6 +27,7 @@ export const NFTAirdropDataContext = createContext<AirdropContextProps>({
   canClaim: async () => false,
   burnToken: async () => {},
   getOwnedTokens: async () => [],
+  merkleTree: null,
 });
 
 export type NFTAirdropDataProviderProps = {
@@ -27,6 +39,14 @@ export const NFTAirdropProvider = ({
 }: NFTAirdropDataProviderProps): JSX.Element => {
   const { airdropContract } = useContract();
   const { account, accountProvider } = useAccount();
+  const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
+  // console.log("Account: ", account);
+  // console.log("AirDropContract: ", airdropContract);
+
+  useEffect(() => {
+    if (!account) return;
+    generateMerkleTree().then(tree => setMerkleTree(tree));
+  }, []);
 
   const claimAirdrop = useCallback(
     async (proof: Proof) => {
@@ -43,12 +63,12 @@ export const NFTAirdropProvider = ({
   );
 
   const canClaim = useCallback(
-    async (owner: string, proof: Proof) => {
+    async (proof: Proof) => {
       const signer = accountProvider?.getSigner();
       try {
         const canClaim = await airdropContract
           ?.connect(signer)
-          .canClaim(owner, proof);
+          ?.canClaim(proof);
         return canClaim || false;
       } catch (error) {
         console.log("Error getting NFT: ", error);
@@ -90,6 +110,7 @@ export const NFTAirdropProvider = ({
         canClaim,
         burnToken,
         getOwnedTokens,
+        merkleTree,
       }}
     >
       {children}

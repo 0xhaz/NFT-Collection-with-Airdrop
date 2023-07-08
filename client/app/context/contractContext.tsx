@@ -1,3 +1,4 @@
+"use client";
 import { ethers, providers } from "ethers";
 import { createContext, useContext } from "react";
 import nftContractAddress from "../contracts/NFT-address.json";
@@ -26,6 +27,21 @@ export const ContractContext = createContext<ContractContextValue>({
   generatedNFTContract: null,
   provider: null,
 });
+
+const getProvider = () => {
+  let provider;
+
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT === "sepolia") {
+    provider = new ethers.providers.InfuraProvider(
+      "sepolia",
+      process.env.NEXT_PUBLIC_INFURA_KEY
+    );
+  } else {
+    provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
+  }
+  //   console.log(provider);
+  return provider;
+};
 
 export const ContractProvider = ({ children }: ContractProviderProps) => {
   const provider = getProvider();
@@ -71,18 +87,3 @@ export const ContractProvider = ({ children }: ContractProviderProps) => {
 export function useContract() {
   return useContext(ContractContext);
 }
-
-const getProvider = () => {
-  let provider;
-
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT === "sepolia") {
-    provider = new ethers.providers.InfuraProvider(
-      "sepolia",
-      process.env.NEXT_PUBLIC_INFURA_KEY
-    );
-  } else {
-    provider = new ethers.providers.JsonRpcProvider();
-  }
-  return provider;
-  console.log(provider);
-};

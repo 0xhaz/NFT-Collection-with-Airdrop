@@ -47,9 +47,12 @@ const deployGeneratedNFT: DeployFunction = async (
   saveConfig(contracts);
 
   log(`Deployed GeneratedNFT to ${generatedNftInstance.address}`);
+  log("---------------------------------------------------------------");
 
   if (!isDevelopment && process.env.ETHERSCAN_API_KEY) {
     await verify(generatedNftInstance.address, args);
+    log(`Verified GeneratedNFT on Etherscan`);
+    log("---------------------------------------------------------------");
   }
 };
 

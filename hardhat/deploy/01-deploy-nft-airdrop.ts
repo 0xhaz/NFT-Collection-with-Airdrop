@@ -47,9 +47,12 @@ const deployAirdrop: DeployFunction = async (
   saveConfig(contracts);
 
   log(`Deployed Airdrop to ${airdropInstance.address}`);
+  log("---------------------------------------------------------------");
 
   if (!isDevelopment && process.env.ETHERSCAN_API_KEY) {
     await verify(airdrop.address, args);
+    log(`Verified Airdrop on Etherscan`);
+    log("---------------------------------------------------------------");
   }
 };
 

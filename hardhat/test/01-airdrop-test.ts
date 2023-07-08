@@ -63,9 +63,7 @@ describe("Airdrop", () => {
     describe("Success", () => {
       it("should return true if the proof is valid and haven't been claimed", async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
-        expect(
-          await airdrop.connect(receiver).canClaim(receiver.address, proof)
-        ).to.be.true;
+        expect(await airdrop.connect(receiver).canClaim(proof)).to.be.true;
       });
     });
 
@@ -73,18 +71,15 @@ describe("Airdrop", () => {
       it("should return false if the proof is valid but already claimed", async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
-        transaction = await airdrop
-          .connect(receiver)
-          .canClaim(receiver.address, proof);
+        transaction = await airdrop.connect(receiver).canClaim(proof);
 
         expect(transaction).to.be.false;
       });
 
       it("should return false if the proof is not valid and haven't been claimed", async () => {
         const invalidProof = tree.getHexProof(keccak256(user1.address));
-        expect(
-          await airdrop.connect(user1).canClaim(user1.address, invalidProof)
-        ).to.be.reverted;
+        expect(await airdrop.connect(user1).canClaim(invalidProof)).to.be
+          .reverted;
       });
     });
   });
