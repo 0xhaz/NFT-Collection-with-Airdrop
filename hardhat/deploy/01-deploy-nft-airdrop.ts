@@ -25,6 +25,13 @@ const deployAirdrop: DeployFunction = async (
   const tree: MerkleTree = await generateMerkleTree();
 
   const root = tree.getHexRoot();
+
+  log(`Merkle root: ${root}`);
+  log("---------------------------------------------------------------");
+
+  log(`Merkle tree leaves:` + tree.getHexLeaves().join("\n"));
+  log("---------------------------------------------------------------");
+
   const nftTokenURIs: string =
     "ipfs://QmT9JJuUya27XKThLvnsB7r1BxTHAyAwRaZc56Ji54h3Fx/";
 

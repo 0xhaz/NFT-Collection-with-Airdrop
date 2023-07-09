@@ -49,14 +49,17 @@ describe("Airdrop", () => {
 
   beforeEach(async () => {
     [deployer, receiver, user1] = await ethers.getSigners();
+    // uncomment console.log("Merkle root: ", root) in 00-generate-merkle-tree.ts
+    // and copy the output to the root variable below
     const root =
-      "0x99754cefd021c036abab5b3610791ede544baa906a4bcd7ed6cc35f9296f2c27";
+      "0x94f9ae854e1f087e27e62c1a89d526f10f4c8b814bf7584bf338b76e88461d96";
     const nftTokenURIs =
       "ipfs://QmT9JJuUya27XKThLvnsB7r1BxTHAyAwRaZc56Ji54h3Fx/";
     const airdropFactory = await ethers.getContractFactory("Airdrop");
     airdrop = await airdropFactory.deploy(root, nftTokenURIs, nft.address);
     await airdrop.deployed();
     tree = await generateMerkleTree();
+    // console.log(receiver.address);
   });
 
   describe("Can Claim Airdrop", () => {
@@ -103,7 +106,7 @@ describe("Airdrop", () => {
       it("should emit AirdropClaimed event", async () => {
         await expect(transaction)
           .to.emit(airdrop, "AirdropClaimed")
-          .withArgs(receiver.address, 1);
+          .withArgs(receiver.address, 0);
       });
     });
 
@@ -130,6 +133,7 @@ describe("Airdrop", () => {
       beforeEach(async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
+
         transaction = await airdrop.connect(receiver).burn(0);
         result = await transaction.wait();
       });

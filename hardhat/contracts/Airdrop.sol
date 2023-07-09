@@ -16,7 +16,7 @@ contract Airdrop is ERC1155, Ownable {
     Counters.Counter private s_tokenCounter;
 
     IERC721 private s_nftContract;
-    bytes32 public immutable i_root;
+    bytes32 public i_root;
     string public s_nftTokenURIs;
 
     mapping(address => bool) public s_claimed;
@@ -51,6 +51,22 @@ contract Airdrop is ERC1155, Ownable {
         i_root = _root;
         s_nftTokenURIs = _nftTokenURIs;
         s_nftContract = IERC721(_nftAddress);
+
+        /**
+         *
+         * @dev looping through all the NFTs and storing the amount of NFTs each address owns
+         * in the s_nftTokenAmount mapping
+         */
+
+        uint256 totalSupply = 0;
+        while (true) {
+            try s_nftContract.ownerOf(totalSupply) returns (address owner) {
+                s_nftTokenAmount[owner]++;
+                totalSupply++;
+            } catch {
+                break;
+            }
+        }
     }
 
     /**
@@ -68,24 +84,32 @@ contract Airdrop is ERC1155, Ownable {
             revert Airdrop__NotInAllowList(msg.sender);
         }
 
-        uint256 numTokensOwns = s_nftContract.balanceOf(msg.sender);
+        uint256 numTokensToClaim = s_nftContract.balanceOf(msg.sender);
+        require(numTokensToClaim > 0, "Airdrop: No tokens to claim");
 
-        require(numTokensOwns > 0, "Airdrop: You don't have any tokens");
+        uint256 numTokensClaimed = 0;
 
-        for (uint256 i = 0; i < numTokensOwns; i++) {
+        while (numTokensClaimed < numTokensToClaim) {
             uint256 tokenId = s_tokenCounter.current();
 
-            _mint(msg.sender, s_tokenIds[msg.sender], 1, "");
+            if (s_nftContract.ownerOf(tokenId) == msg.sender) {
+                _mint(msg.sender, tokenId, 1, "");
 
-            s_tokenOwners[tokenId] = msg.sender;
+                s_tokenOwners[tokenId] = msg.sender;
+                s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
 
-            s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
+                s_tokenCounter.increment();
+                numTokensClaimed++;
 
+                emit AirdropClaimed(msg.sender, tokenId);
+            } else {
+                s_tokenCounter.increment();
+            }
+        }
+
+        s_nftTokenAmount[msg.sender] = 0;
+        if (numTokensClaimed == numTokensToClaim) {
             s_claimed[msg.sender] = true;
-
-            tokenId++;
-
-            emit AirdropClaimed(msg.sender, tokenId);
         }
     }
 
@@ -105,6 +129,10 @@ contract Airdrop is ERC1155, Ownable {
 
     function setApprovedContract(address _contractAddress) external onlyOwner {
         s_approvedContracts[_contractAddress] = true;
+    }
+
+    function setMerkleRoot(bytes32 _root) external onlyOwner {
+        i_root = _root;
     }
 
     function revokeApproval(address _contractAddress) external onlyOwner {

@@ -17,7 +17,7 @@ const URL =
   "https://ipfs.io/ipfs/bafyreid4an6ng6e6hok56l565eivozra3373bo6funw3p5mhq5oonew6u4/metadata.json";
 const nftTokenURIs = "ipfs://QmT9JJuUya27XKThLvnsB7r1BxTHAyAwRaZc56Ji54h3Fx/";
 const root =
-  "0x99754cefd021c036abab5b3610791ede544baa906a4bcd7ed6cc35f9296f2c27";
+  "0x94f9ae854e1f087e27e62c1a89d526f10f4c8b814bf7584bf338b76e88461d96";
 const NAME = "Dapp Punks";
 const SYMBOL = "DPX";
 const COST = ether(10);

@@ -1,16 +1,7 @@
 "use client";
-import {
-  createContext,
-  useContext,
-  useCallback,
-  useState,
-  useEffect,
-} from "react";
+import { createContext, useContext, useCallback } from "react";
 import { ethers } from "ethers";
-import { MerkleTree } from "merkletreejs";
-import { generateMerkleTree } from "../utils/generate-merkle-tree";
-import keccak256 from "ethers/lib/utils";
-import { useContract, useAccount, NFTDataProvider } from "./index";
+import { useContract, useAccount } from "./index";
 
 type Proof = ethers.Bytes[];
 
@@ -19,7 +10,6 @@ interface AirdropContextProps {
   canClaim: (proof: Proof) => Promise<boolean>;
   burnToken: (tokenId: number) => Promise<void>;
   getOwnedTokens: (owner: string) => Promise<number[]>;
-  merkleTree: MerkleTree | null;
 }
 
 export const NFTAirdropDataContext = createContext<AirdropContextProps>({
@@ -27,7 +17,6 @@ export const NFTAirdropDataContext = createContext<AirdropContextProps>({
   canClaim: async () => false,
   burnToken: async () => {},
   getOwnedTokens: async () => [],
-  merkleTree: null,
 });
 
 export type NFTAirdropDataProviderProps = {
@@ -39,21 +28,21 @@ export const NFTAirdropProvider = ({
 }: NFTAirdropDataProviderProps): JSX.Element => {
   const { airdropContract } = useContract();
   const { account, accountProvider } = useAccount();
-  const [merkleTree, setMerkleTree] = useState<MerkleTree | null>(null);
+
   // console.log("Account: ", account);
   // console.log("AirDropContract: ", airdropContract);
 
-  useEffect(() => {
-    if (!account) return;
-    generateMerkleTree().then(tree => setMerkleTree(tree));
-  }, []);
-
   const claimAirdrop = useCallback(
     async (proof: Proof) => {
+      if (!account) {
+        console.log("No account");
+        return;
+      }
       const signer = accountProvider?.getSigner();
       const contractWithSigner = airdropContract?.connect(signer);
       try {
-        await contractWithSigner?.claim(proof);
+        const convertedProof = proof.map(item => ethers.utils.arrayify(item));
+        await contractWithSigner?.claimAirdrop(convertedProof);
       } catch (error) {
         console.log("Error claiming airdrop: ", error);
         throw error;
@@ -65,6 +54,7 @@ export const NFTAirdropProvider = ({
   const canClaim = useCallback(
     async (proof: Proof) => {
       const signer = accountProvider?.getSigner();
+
       try {
         const canClaim = await airdropContract
           ?.connect(signer)
@@ -110,7 +100,6 @@ export const NFTAirdropProvider = ({
         canClaim,
         burnToken,
         getOwnedTokens,
-        merkleTree,
       }}
     >
       {children}

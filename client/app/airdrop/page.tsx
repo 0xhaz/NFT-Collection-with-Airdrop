@@ -4,8 +4,8 @@ import CustomButton from "../components/CustomButton";
 import { useAccount, useNFTAirdrop } from "../context";
 import Loader from "../components/Loader";
 import Image from "next/image";
-import { keccak256 } from "ethers/lib/utils";
-import { generateMerkleTree, verifyProof } from "../utils/generate-merkle-tree";
+import { allowList, generateMerkleTree } from "../utils/generate-merkle-tree";
+import { arrayify, keccak256 } from "ethers/lib/utils";
 import { MerkleTree } from "merkletreejs";
 import { ethers } from "ethers";
 
@@ -13,27 +13,26 @@ interface TreeProps {
   treeInstance: MerkleTree | null;
 }
 
-type Proof = ethers.Bytes[];
+type Proof = ArrayLike<number>[];
 
 const Airdrop = () => {
   const [isEligible, setIsEligible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proof, setProof] = useState<Proof>([]);
+  const [treeInstance, setTreeInstance] = useState<MerkleTree | null>(null);
   const [isButtonClicked, setIsButtonClicked] = useState(false);
   const { account } = useAccount();
-  const { canClaim, claimAirdrop, merkleTree } = useNFTAirdrop();
+  const { canClaim, claimAirdrop } = useNFTAirdrop();
 
-  const generateProof = async () => {
-    if (account) {
-      const tree = await generateMerkleTree();
-      const proof = tree.getHexProof(keccak256(account));
-      const convertedProof: Proof = proof.map(item =>
-        ethers.utils.arrayify(item)
-      );
-      // console.log("Proof: ", convertedProof);
-      setProof(convertedProof);
-      return convertedProof;
-    }
+  const generateProof = async (userAddress: string): Promise<boolean> => {
+    const userLeaf = keccak256(userAddress);
+    const tree = await generateMerkleTree();
+    const proof = tree.getHexProof(userLeaf);
+
+    const validProof = proof.map(item => arrayify(item));
+    setProof(validProof);
+
+    return tree.verify(proof, userLeaf, tree.getHexRoot());
   };
 
   const checkEligibility = async () => {
@@ -41,13 +40,8 @@ const Airdrop = () => {
 
     try {
       if (account) {
-        const eligible = verifyProof(
-          proof.map(item => ethers.utils.hexlify(item)),
-          account,
-          merkleTree as MerkleTree
-        );
-        console.log("Eligible: ", eligible);
-        setIsEligible(eligible);
+        const isUserEligible = await generateProof(account);
+        setIsEligible(isUserEligible);
         setIsButtonClicked(true);
       }
     } catch (error) {
@@ -59,7 +53,7 @@ const Airdrop = () => {
   const claimAirDrop = async () => {
     setLoading(true);
     try {
-      if (proof.length > 0) {
+      if (account) {
         await claimAirdrop(proof);
         setIsEligible(false);
       }
@@ -68,19 +62,6 @@ const Airdrop = () => {
     }
     setLoading(false);
   };
-
-  useEffect(() => {
-    if (!account) return;
-    if (isButtonClicked) {
-      checkEligibility();
-    }
-  }, [isButtonClicked]);
-
-  useEffect(() => {
-    if (!account) return;
-
-    generateProof();
-  }, [account]);
 
   return (
     <>
@@ -97,26 +78,27 @@ const Airdrop = () => {
         </h1>
 
         <div className="flex flex-col justify-center ">
-          {isEligible && isButtonClicked ? (
-            <p>Congratulations! You are eligible for the Airdrop.</p>
-          ) : isButtonClicked && !isEligible ? (
+          {!isButtonClicked ? (
+            <>
+              <CustomButton
+                btnType="button"
+                title="Check Eligibility"
+                handleClick={checkEligibility}
+                styles="w-[500px] text-2xl"
+              />
+            </>
+          ) : isEligible ? (
+            <>
+              <p>Congratulations! You are eligible for the Airdrop.</p>
+              <CustomButton
+                btnType="submit"
+                title="Claim Airdrop"
+                handleClick={claimAirDrop}
+                styles="w-[500px] text-2xl"
+              />
+            </>
+          ) : (
             <p>Sorry! You are not eligible for the Airdrop.</p>
-          ) : null}
-
-          <CustomButton
-            btnType="button"
-            title="Check Eligibility"
-            handleClick={checkEligibility}
-            styles="w-[500px] text-2xl"
-          />
-
-          {isEligible && (
-            <CustomButton
-              btnType="submit"
-              title="Claim Airdrop"
-              handleClick={claimAirDrop}
-              styles="w-[500px] text-2xl"
-            />
           )}
         </div>
       </div>
