@@ -8,12 +8,14 @@ type MintAmount = ethers.BigNumber;
 interface NFTContextProps {
   mintNft: (mintAmount: number) => Promise<void>;
   getNft: (owner: string) => Promise<number[]>;
+  getCost: () => Promise<number>;
   getTotalSupply: () => Promise<number>;
 }
 
 export const NFTDataContext = createContext<NFTContextProps>({
   mintNft: async () => {},
   getNft: async () => [],
+  getCost: async () => 0,
   getTotalSupply: async () => 0,
 });
 
@@ -58,6 +60,16 @@ export const NFTDataProvider = ({
     }
   }, [nftContract]);
 
+  const getCost = useCallback(async () => {
+    try {
+      const cost = await nftContract?.getCost();
+      return cost || [];
+    } catch (error) {
+      console.log("Error getting NFT: ", error);
+      throw error;
+    }
+  }, [nftContract]);
+
   const getTotalSupply = useCallback(async () => {
     try {
       const totalSupply = await nftContract?.getTotalSupply();
@@ -73,6 +85,7 @@ export const NFTDataProvider = ({
       value={{
         mintNft,
         getNft,
+        getCost,
         getTotalSupply,
       }}
     >

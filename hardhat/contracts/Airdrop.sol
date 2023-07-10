@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 error Airdrop__AlreadyClaimed(address caller);
 error Airdrop__NotInAllowList(address caller);
@@ -13,6 +14,7 @@ error Airdrop__ExceededAmount(address caller);
 
 contract Airdrop is ERC1155, Ownable {
     using Counters for Counters.Counter;
+    using Strings for uint256;
     Counters.Counter private s_tokenCounter;
 
     IERC721 private s_nftContract;
@@ -22,7 +24,7 @@ contract Airdrop is ERC1155, Ownable {
     mapping(address => bool) public s_claimed;
     mapping(uint256 => bool) private s_exists;
     mapping(address => uint256) private s_tokenIds;
-    mapping(address => uint256) private s_nftTokenAmount;
+    mapping(address => mapping(uint256 => uint256)) private s_nftTokenAmount;
     mapping(uint256 => address) public s_tokenOwners;
     mapping(uint256 => string) public s_tokenURIs;
     mapping(address => bool) private s_approvedContracts;
@@ -61,7 +63,7 @@ contract Airdrop is ERC1155, Ownable {
         uint256 totalSupply = 0;
         while (true) {
             try s_nftContract.ownerOf(totalSupply) returns (address owner) {
-                s_nftTokenAmount[owner]++;
+                s_nftTokenAmount[owner][totalSupply]++;
                 totalSupply++;
             } catch {
                 break;
@@ -107,7 +109,6 @@ contract Airdrop is ERC1155, Ownable {
             }
         }
 
-        s_nftTokenAmount[msg.sender] = 0;
         if (numTokensClaimed == numTokensToClaim) {
             s_claimed[msg.sender] = true;
         }
@@ -121,6 +122,14 @@ contract Airdrop is ERC1155, Ownable {
                 i_root,
                 keccak256(abi.encodePacked(msg.sender))
             );
+    }
+
+    function getNftBalance(address _address) external view returns (uint256) {
+        return s_nftContract.balanceOf(_address);
+    }
+
+    function getClaimStatus(address _address) external view returns (bool) {
+        return s_claimed[_address];
     }
 
     function ownerOf(uint256 tokenId) external view returns (bool) {
@@ -150,10 +159,6 @@ contract Airdrop is ERC1155, Ownable {
 
     function getTokenId(address _owner) external view returns (uint256) {
         return s_tokenIds[_owner];
-    }
-
-    function getNftBalance(address _owner) external view returns (uint256) {
-        return s_nftTokenAmount[_owner];
     }
 
     /**
@@ -236,5 +241,24 @@ contract Airdrop is ERC1155, Ownable {
 
     function _setURI(string memory _uri) internal override {
         super._setURI(_uri);
+    }
+
+    function _getNftTokenByIndex(
+        address _owner,
+        uint256 index
+    ) internal view returns (uint256) {
+        for (
+            uint256 tokenId = 0;
+            tokenId < s_tokenCounter.current();
+            tokenId++
+        ) {
+            if (s_nftContract.ownerOf(tokenId) == _owner) {
+                if (index == 0) {
+                    return tokenId;
+                }
+                index--;
+            }
+        }
+        revert("Airdrop: index out of bounds");
     }
 }

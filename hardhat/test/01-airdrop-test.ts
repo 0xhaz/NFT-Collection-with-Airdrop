@@ -5,6 +5,7 @@ import { generateMerkleTree } from "../scripts/00-generate-merkle-tree";
 import { MerkleTree } from "merkletreejs";
 import { keccak256 } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BigNumber } from "ethers";
 
 const tokens = (n: number) => {
   return ethers.utils.parseUnits(n.toString(), "ether");
@@ -30,7 +31,7 @@ describe("Airdrop", () => {
     const MAX_AMOUNT = 10;
     const BASE_URI = "ipfs://QmQ2jnDYecFhrf3asEWjyjZRX1pZSsNWG3qHzmNDvXa9qg/";
 
-    [deployer, minter] = await ethers.getSigners();
+    [deployer, receiver] = await ethers.getSigners();
 
     const NFT = await ethers.getContractFactory("NFT");
     nft = await NFT.deploy(
@@ -43,7 +44,7 @@ describe("Airdrop", () => {
     );
     await nft.deployed();
 
-    transaction = await nft.connect(minter).mint(1, { value: COST });
+    transaction = await nft.connect(receiver).mint(1, { value: COST });
     result = await transaction.wait();
   });
 

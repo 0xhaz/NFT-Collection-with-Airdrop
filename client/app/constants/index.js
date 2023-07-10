@@ -26,13 +26,13 @@ export const MENU = [
     disabled: false,
     link: "/generative",
   },
-  {
-    name: "Wallet",
-    path: "/wallet",
-    icon: wallet,
-    disabled: false,
-    link: "/wallet",
-  },
+  // {
+  //   name: "Wallet",
+  //   path: "/wallet",
+  //   icon: wallet,
+  //   disabled: false,
+  //   link: "/wallet",
+  // },
   {
     name: "Gallery",
     path: "/gallery",

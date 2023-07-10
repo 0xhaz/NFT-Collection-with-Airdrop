@@ -9,14 +9,16 @@ interface AirdropContextProps {
   claimAirdrop: (proof: Proof) => Promise<void>;
   canClaim: (proof: Proof) => Promise<boolean>;
   burnToken: (tokenId: number) => Promise<void>;
-  getOwnedTokens: (owner: string) => Promise<number[]>;
+  getNFTTokens: (address: string) => Promise<number[]>;
+  getClaimStatus: (address: string) => Promise<boolean>;
 }
 
 export const NFTAirdropDataContext = createContext<AirdropContextProps>({
   claimAirdrop: async () => {},
   canClaim: async () => false,
   burnToken: async () => {},
-  getOwnedTokens: async () => [],
+  getNFTTokens: async () => [],
+  getClaimStatus: async () => false,
 });
 
 export type NFTAirdropDataProviderProps = {
@@ -82,16 +84,35 @@ export const NFTAirdropProvider = ({
     [airdropContract, account]
   );
 
-  const getOwnedTokens = useCallback(async () => {
-    const signer = accountProvider?.getSigner();
-    try {
-      const ownedTokens = await airdropContract?.connect(signer).getNFT();
-      return ownedTokens || [];
-    } catch (error) {
-      console.log("Error getting NFT: ", error);
-      throw error;
-    }
-  }, [airdropContract]);
+  const getNFTTokens = useCallback(
+    async (address: string) => {
+      const signer = accountProvider?.getSigner();
+      const contractWithSigner = airdropContract?.connect(signer);
+      try {
+        const tokenOwned = await airdropContract?.getNftBalance(address);
+        return tokenOwned || [];
+      } catch (error) {
+        console.log("Error getting NFT: ", error);
+        throw error;
+      }
+    },
+    [airdropContract]
+  );
+
+  const getClaimStatus = useCallback(
+    async (address: string) => {
+      const signer = accountProvider?.getSigner();
+      const contractWithSigner = airdropContract?.connect(signer);
+      try {
+        const claimStatus = await airdropContract?.getClaimStatus(address);
+        return claimStatus || false;
+      } catch (error) {
+        console.log("Error getting NFT: ", error);
+        throw error;
+      }
+    },
+    [airdropContract]
+  );
 
   return (
     <NFTAirdropDataContext.Provider
@@ -99,7 +120,8 @@ export const NFTAirdropProvider = ({
         claimAirdrop,
         canClaim,
         burnToken,
-        getOwnedTokens,
+        getNFTTokens,
+        getClaimStatus,
       }}
     >
       {children}

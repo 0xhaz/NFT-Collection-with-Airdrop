@@ -19,10 +19,11 @@ const Airdrop = () => {
   const [isEligible, setIsEligible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [proof, setProof] = useState<Proof>([]);
-  const [treeInstance, setTreeInstance] = useState<MerkleTree | null>(null);
+  const [nftTokens, setNftTokens] = useState<number[]>([]);
+  const [claimStatus, setClaimStatus] = useState<boolean>(false);
   const [isButtonClicked, setIsButtonClicked] = useState(false);
   const { account } = useAccount();
-  const { canClaim, claimAirdrop } = useNFTAirdrop();
+  const { getNFTTokens, claimAirdrop } = useNFTAirdrop();
 
   const generateProof = async (userAddress: string): Promise<boolean> => {
     const userLeaf = keccak256(userAddress);
@@ -55,13 +56,49 @@ const Airdrop = () => {
     try {
       if (account) {
         await claimAirdrop(proof);
-        setIsEligible(false);
+        setClaimStatus(true);
       }
     } catch (error) {
       console.log("Error claiming airdrop: ", error);
     }
     setLoading(false);
   };
+
+  const displayTokens = () => {
+    if (nftTokens.length === 0) {
+      return <p>You don't have any NFT</p>;
+    }
+
+    if (claimStatus) {
+      return <p>You have already claimed your NFT</p>;
+    }
+
+    if (!isEligible) {
+      return <p>You are not eligible for the airdrop</p>;
+    }
+
+    if (isEligible === true && isButtonClicked === true) {
+      return (
+        <div>
+          <p>Congratulations! You are eligible for the Airdrop.</p>
+          <p>You have {nftTokens.toString()} NFTs to claimed!</p>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  useEffect(() => {
+    const fetchNFTTokens = async () => {
+      if (account) {
+        const tokens = await getNFTTokens(account);
+        setNftTokens(tokens);
+      }
+    };
+
+    fetchNFTTokens();
+  }, []);
 
   return (
     <>
@@ -89,13 +126,17 @@ const Airdrop = () => {
             </>
           ) : isEligible ? (
             <>
-              <p>Congratulations! You are eligible for the Airdrop.</p>
-              <CustomButton
-                btnType="submit"
-                title="Claim Airdrop"
-                handleClick={claimAirDrop}
-                styles="w-[500px] text-2xl"
-              />
+              {displayTokens()}
+              {claimStatus ? (
+                <p></p>
+              ) : (
+                <CustomButton
+                  btnType="submit"
+                  title="Claim Airdrop"
+                  handleClick={claimAirDrop}
+                  styles="w-[500px] text-2xl"
+                />
+              )}
             </>
           ) : (
             <p>Sorry! You are not eligible for the Airdrop.</p>

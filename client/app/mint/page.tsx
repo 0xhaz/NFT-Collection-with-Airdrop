@@ -9,8 +9,9 @@ const Mint = () => {
   const [totalSupply, setTotalSupply] = useState<number>(0);
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [cost, setCost] = useState<number>(0);
   const { account } = useAccount();
-  const { mintNft, getTotalSupply } = useNFT();
+  const { mintNft, getTotalSupply, getCost } = useNFT();
 
   useEffect(() => {
     if (!account) return;
@@ -23,6 +24,15 @@ const Mint = () => {
       setTotalSupply(supply);
     } catch (error) {
       console.log("Error fetching total supply: ", error);
+    }
+  };
+
+  const fetchCost = async () => {
+    try {
+      const cost = await getCost();
+      setCost(cost);
+    } catch (error) {
+      console.log("Error fetching cost: ", error);
     }
   };
 
