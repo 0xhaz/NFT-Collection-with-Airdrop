@@ -4,19 +4,21 @@ import CustomButton from "../components/CustomButton";
 import { useNFT, useAccount } from "../context";
 import { useState, useEffect } from "react";
 import Loader from "../components/Loader";
+import { BigNumber, ethers } from "ethers";
 
 const Mint = () => {
   const [totalSupply, setTotalSupply] = useState<number>(0);
   const [mintAmount, setMintAmount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const [cost, setCost] = useState<number>(0);
+  const [cost, setCost] = useState<string>("");
   const { account } = useAccount();
   const { mintNft, getTotalSupply, getCost } = useNFT();
 
   useEffect(() => {
     if (!account) return;
     fetchTotalSupply();
-  }, []);
+    fetchCost();
+  }, [account]);
 
   const fetchTotalSupply = async () => {
     try {
@@ -30,7 +32,7 @@ const Mint = () => {
   const fetchCost = async () => {
     try {
       const cost = await getCost();
-      setCost(cost);
+      setCost(cost.toString());
     } catch (error) {
       console.log("Error fetching cost: ", error);
     }
@@ -96,7 +98,7 @@ const Mint = () => {
       <div className="flex justify-center">
         <CustomButton
           btnType="button"
-          title="Mint NFT (0.01 ETH)"
+          title={`Mint NFT (${cost.toString()} ETH)`}
           styles="mt-[50px] text-2xl disabled:bg-gray-400 disabled:cursor-not-allowed"
           handleClick={handleMintNft}
           disabled={loading || !account}

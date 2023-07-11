@@ -16,6 +16,50 @@ const Generative = () => {
   const [message, setMessage] = useState<string>("");
   const { account } = useAccount();
 
+  const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (nftName === "" || nftDescription === "") {
+      setMessage("Please fill in all fields");
+    }
+  };
+
+  const generateImage = async () => {
+    setMessage("Generating Image...");
+    const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2`;
+    try {
+      const response = await axios({
+        url: URL,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({
+          inputs: nftDescription,
+          options: { wait_for_model: true },
+        }),
+        responseType: "arraybuffer",
+      });
+
+      if (response.headers && response.headers["content-type"]) {
+        const type = response.headers["content-type"];
+        const data = response.data;
+
+        const base64data = Buffer.from(data).toString("base64");
+        const img = `data:${type};base64,` + base64data;
+        setNftImage(img);
+
+        return data;
+      } else {
+        throw new Error("No content type");
+      }
+    } catch (error) {
+      console.log("Error generating image: ", error);
+    }
+  };
+
   return (
     <>
       <div className="mt-10 lg:mt-40 flex flex-col items-center space-y-6 text-center lg:space-y-0 lg:justify-center">

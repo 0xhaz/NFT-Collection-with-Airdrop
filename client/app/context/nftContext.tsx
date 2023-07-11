@@ -1,6 +1,6 @@
 "use client";
 import { useContext, useCallback, createContext } from "react";
-import { ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { useContract, useAccount } from "./index";
 
 type MintAmount = ethers.BigNumber;
@@ -8,14 +8,14 @@ type MintAmount = ethers.BigNumber;
 interface NFTContextProps {
   mintNft: (mintAmount: number) => Promise<void>;
   getNft: (owner: string) => Promise<number[]>;
-  getCost: () => Promise<number>;
+  getCost: () => Promise<string>;
   getTotalSupply: () => Promise<number>;
 }
 
 export const NFTDataContext = createContext<NFTContextProps>({
   mintNft: async () => {},
   getNft: async () => [],
-  getCost: async () => 0,
+  getCost: async () => ethers.utils.formatEther("0"),
   getTotalSupply: async () => 0,
 });
 
@@ -63,7 +63,7 @@ export const NFTDataProvider = ({
   const getCost = useCallback(async () => {
     try {
       const cost = await nftContract?.getCost();
-      return cost || [];
+      return ethers.utils.formatEther(cost);
     } catch (error) {
       console.log("Error getting NFT: ", error);
       throw error;
