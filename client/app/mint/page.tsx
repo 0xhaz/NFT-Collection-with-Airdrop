@@ -12,7 +12,7 @@ const Mint = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [cost, setCost] = useState<string>("");
   const { account } = useAccount();
-  const { mintNft, getTotalSupply, getCost } = useNFT();
+  const { mintNft, getTotalSupply, getCost, getBalance } = useNFT();
 
   useEffect(() => {
     if (!account) return;

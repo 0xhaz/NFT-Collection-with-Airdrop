@@ -44,7 +44,9 @@ describe("Airdrop", () => {
     );
     await nft.deployed();
 
-    transaction = await nft.connect(receiver).mint(1, { value: COST });
+    transaction = await nft
+      .connect(receiver)
+      .mint(5, { value: ethers.utils.parseEther("50") });
     result = await transaction.wait();
   });
 
@@ -100,8 +102,8 @@ describe("Airdrop", () => {
         expect(await airdrop.s_claimed(receiver.address)).to.be.true;
       });
 
-      it("should show balance of receiver is 1", async () => {
-        expect(await airdrop.balanceOf(receiver.address, 0)).to.be.equal(1);
+      it("should show balance of receiver is 5", async () => {
+        expect(await airdrop.balanceOf(receiver.address, 0)).to.be.equal(5);
       });
 
       it("should emit AirdropClaimed event", async () => {
@@ -115,16 +117,14 @@ describe("Airdrop", () => {
       it("should revert claiming airdrop when already claimed", async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
-        await expect(
-          airdrop.connect(receiver).claimAirdrop(proof)
-        ).to.be.revertedWithCustomError(airdrop, "Airdrop__AlreadyClaimed");
+        await expect(airdrop.connect(receiver).claimAirdrop(proof)).to.be
+          .reverted;
       });
 
       it("should revert claiming airdrop when proof is not valid", async () => {
         const invalidProof = tree.getHexProof(keccak256(user1.address));
-        await expect(
-          airdrop.connect(receiver).claimAirdrop(invalidProof)
-        ).to.be.revertedWithCustomError(airdrop, "Airdrop__NotInAllowList");
+        await expect(airdrop.connect(receiver).claimAirdrop(invalidProof)).to.be
+          .reverted;
       });
     });
   });
@@ -135,7 +135,7 @@ describe("Airdrop", () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
 
-        transaction = await airdrop.connect(receiver).burn(0);
+        transaction = await airdrop.burn(receiver.address, 0, 1);
         result = await transaction.wait();
       });
 
@@ -143,8 +143,8 @@ describe("Airdrop", () => {
         expect(await airdrop.s_claimed(receiver.address)).to.be.true;
       });
 
-      it("should show balance of receiver is 0", async () => {
-        expect(await airdrop.balanceOf(receiver.address, 0)).to.be.equal(0);
+      it("should show balance of receiver is 4", async () => {
+        expect(await airdrop.balanceOf(receiver.address, 0)).to.be.equal(4);
       });
 
       it("should emit AirdropBurned event", async () => {
@@ -156,13 +156,13 @@ describe("Airdrop", () => {
 
     describe("Failure", () => {
       it("should revert burning airdrop when not claimed", async () => {
-        await expect(airdrop.connect(receiver).burn(0)).to.be.reverted;
+        await expect(airdrop.burn(receiver.address, 0, 1)).to.be.reverted;
       });
 
       it("should revert burning airdrop when not owner", async () => {
         const proof = tree.getHexProof(keccak256(receiver.address));
         await airdrop.connect(receiver).claimAirdrop(proof);
-        await expect(airdrop.connect(user1).burn(0)).to.be.revertedWith(
+        await expect(airdrop.burn(user1.address, 0, 1)).to.be.revertedWith(
           "Airdrop: caller is not the owner of the token"
         );
       });

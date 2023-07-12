@@ -8,6 +8,11 @@ const nextConfig = {
         hostname: "cdn.hackernoon.com",
         pathname: "/images/**/*",
       },
+      {
+        protocol: "https",
+        hostname: "ipfs.io",
+        pathname: "/ipfs/**/*",
+      },
     ],
   },
 };

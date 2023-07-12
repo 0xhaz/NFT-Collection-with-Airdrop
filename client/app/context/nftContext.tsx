@@ -10,6 +10,7 @@ interface NFTContextProps {
   getNft: (owner: string) => Promise<number[]>;
   getCost: () => Promise<string>;
   getTotalSupply: () => Promise<number>;
+  getBalance: (address: string) => Promise<number>;
 }
 
 export const NFTDataContext = createContext<NFTContextProps>({
@@ -17,6 +18,7 @@ export const NFTDataContext = createContext<NFTContextProps>({
   getNft: async () => [],
   getCost: async () => ethers.utils.formatEther("0"),
   getTotalSupply: async () => 0,
+  getBalance: async () => 0,
 });
 
 export type NFTDataProviderProps = {
@@ -80,6 +82,19 @@ export const NFTDataProvider = ({
     }
   }, [nftContract]);
 
+  const getBalance = useCallback(
+    async (address: string) => {
+      try {
+        const balance = await nftContract?.tokenByIndex();
+        return balance || [];
+      } catch (error) {
+        console.log("Error getting NFT: ", error);
+        throw error;
+      }
+    },
+    [nftContract]
+  );
+
   return (
     <NFTDataContext.Provider
       value={{
@@ -87,6 +102,7 @@ export const NFTDataProvider = ({
         getNft,
         getCost,
         getTotalSupply,
+        getBalance,
       }}
     >
       {children}

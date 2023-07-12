@@ -2,22 +2,24 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+// import "hardhat/console.sol";
 
 error Airdrop__AlreadyClaimed(address caller);
 error Airdrop__NotInAllowList(address caller);
 error Airdrop__ExceededAmount(address caller);
 
-contract Airdrop is ERC1155, Ownable {
+contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
     using Counters for Counters.Counter;
     using Strings for uint256;
     Counters.Counter private s_tokenCounter;
 
-    IERC721 private s_nftContract;
+    IERC721Enumerable private s_nftContract;
     bytes32 public i_root;
     string public s_nftTokenURIs;
 
@@ -52,23 +54,13 @@ contract Airdrop is ERC1155, Ownable {
     ) ERC1155("") {
         i_root = _root;
         s_nftTokenURIs = _nftTokenURIs;
-        s_nftContract = IERC721(_nftAddress);
+        s_nftContract = IERC721Enumerable(_nftAddress);
 
         /**
          *
          * @dev looping through all the NFTs and storing the amount of NFTs each address owns
          * in the s_nftTokenAmount mapping
          */
-
-        uint256 totalSupply = 0;
-        while (true) {
-            try s_nftContract.ownerOf(totalSupply) returns (address owner) {
-                s_nftTokenAmount[owner][totalSupply]++;
-                totalSupply++;
-            } catch {
-                break;
-            }
-        }
     }
 
     /**
@@ -87,31 +79,22 @@ contract Airdrop is ERC1155, Ownable {
         }
 
         uint256 numTokensToClaim = s_nftContract.balanceOf(msg.sender);
+
         require(numTokensToClaim > 0, "Airdrop: No tokens to claim");
 
-        uint256 numTokensClaimed = 0;
+        for (uint256 i = 0; i < numTokensToClaim; i++) {
+            uint256 tokenId = _getNftTokenByIndex(msg.sender, i);
 
-        while (numTokensClaimed < numTokensToClaim) {
-            uint256 tokenId = s_tokenCounter.current();
+            _mint(msg.sender, tokenId, numTokensToClaim, "");
 
-            if (s_nftContract.ownerOf(tokenId) == msg.sender) {
-                _mint(msg.sender, tokenId, 1, "");
+            s_tokenOwners[tokenId] = msg.sender;
+            s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
+            s_tokenIds[msg.sender] = tokenId;
 
-                s_tokenOwners[tokenId] = msg.sender;
-                s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
-
-                s_tokenCounter.increment();
-                numTokensClaimed++;
-
-                emit AirdropClaimed(msg.sender, tokenId);
-            } else {
-                s_tokenCounter.increment();
-            }
+            emit AirdropClaimed(msg.sender, tokenId);
         }
 
-        if (numTokensClaimed == numTokensToClaim) {
-            s_claimed[msg.sender] = true;
-        }
+        s_claimed[msg.sender] = true;
     }
 
     function canClaim(bytes32[] calldata _proof) external view returns (bool) {
@@ -146,15 +129,6 @@ contract Airdrop is ERC1155, Ownable {
 
     function revokeApproval(address _contractAddress) external onlyOwner {
         delete s_approvedContracts[_contractAddress];
-    }
-
-    function burn(uint256 tokenId) external {
-        require(
-            s_tokenOwners[tokenId] == msg.sender,
-            "Airdrop: caller is not the owner of the token"
-        );
-        _burn(msg.sender, tokenId, 1);
-        emit TokenBurned(msg.sender, tokenId);
     }
 
     function getTokenId(address _owner) external view returns (uint256) {
@@ -211,11 +185,18 @@ contract Airdrop is ERC1155, Ownable {
         }
     }
 
-    function uri(
-        uint256 _tokenId
-    ) public view override returns (string memory) {
-        require(s_exists[_tokenId], "Airdrop: URI query for nonexistent token");
-        return s_tokenURIs[_tokenId];
+    function burn(
+        address _account,
+        uint256 _id,
+        uint256 _amount
+    ) public virtual override {
+        require(
+            s_tokenOwners[_id] == _account,
+            "Airdrop: caller is not the owner of the token"
+        );
+        _burn(_account, _id, _amount);
+        emit TransferSingle(msg.sender, _account, address(0), _id, _amount);
+        emit TokenBurned(_account, _id);
     }
 
     function _mint(
@@ -247,18 +228,10 @@ contract Airdrop is ERC1155, Ownable {
         address _owner,
         uint256 index
     ) internal view returns (uint256) {
-        for (
-            uint256 tokenId = 0;
-            tokenId < s_tokenCounter.current();
-            tokenId++
-        ) {
-            if (s_nftContract.ownerOf(tokenId) == _owner) {
-                if (index == 0) {
-                    return tokenId;
-                }
-                index--;
-            }
-        }
-        revert("Airdrop: index out of bounds");
+        uint256 tokenCount = s_nftContract.balanceOf(_owner);
+
+        require(index < tokenCount, "Airdrop: index out of bounds");
+
+        return s_nftContract.tokenOfOwnerByIndex(_owner, index);
     }
 }

@@ -49,7 +49,9 @@ describe("GeneratedNFT", () => {
     );
     await nft.deployed();
 
-    transaction = await nft.connect(minter).mint(1, { value: COST });
+    transaction = await nft
+      .connect(minter)
+      .mint(5, { value: ethers.utils.parseEther("50") });
     result = await transaction.wait();
 
     tree = await generateMerkleTree();
@@ -67,7 +69,7 @@ describe("GeneratedNFT", () => {
     transaction = await airdrop.connect(minter).claimAirdrop(proof);
     result = await transaction.wait();
 
-    expect(await airdrop.balanceOf(minter.address, 0)).to.equal(1);
+    expect(await airdrop.balanceOf(minter.address, 0)).to.equal(5);
   });
 
   beforeEach(async () => {
@@ -110,15 +112,20 @@ describe("GeneratedNFT", () => {
   describe("GeneratedNFT minting", () => {
     describe("Succes", () => {
       beforeEach(async () => {
-        // console.log(
-        //   "Balance token: ",
-        //   await airdrop.balanceOf(minter.address, 0)
-        // );
-        transaction = await generatedNFT.connect(minter).mint(1, URL);
+        console.log(
+          "Balance token: ",
+          await airdrop.balanceOf(minter.address, 0)
+        );
+
+        transaction = await generatedNFT.connect(minter).mint(URL);
         result = await transaction.wait();
+        console.log(
+          "Balance token after: ",
+          await airdrop.balanceOf(minter.address, 0)
+        );
       });
 
-      it("returns tokenURI, totalSupply and owner, airdrop balance return 0", async () => {
+      it("returns tokenURI, totalSupply and owner, airdrop balance return 5", async () => {
         result = await generatedNFT.ownerOf(1);
         expect(result).to.be.equal(minter.address);
         result = await generatedNFT.tokenURI("1");
@@ -126,7 +133,8 @@ describe("GeneratedNFT", () => {
         result = await generatedNFT.totalSupply();
         expect(result).to.be.equal(1);
         result = await airdrop.balanceOf(minter.address, 0);
-        expect(result).to.be.equal(0);
+        console.log(await generatedNFT.balanceOf(minter.address));
+        expect(result).to.be.equal(5);
       });
     });
   });

@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Image from "next/image";
 import Loader from "../components/Loader";
-import { useAccount } from "../context";
+import { NFTStorage } from "nft.storage";
+import { useAccount, useGeneratedNFT } from "../context";
 import CustomButton from "../components/CustomButton";
 
 const Generative = () => {
@@ -11,28 +12,22 @@ const Generative = () => {
   const [nft, setNft] = useState(null);
   const [nftName, setNftName] = useState<string>("");
   const [nftDescription, setNftDescription] = useState<string>("");
+  const [airdropBalance, setAirdropBalance] = useState<number>(0);
   const [nftImage, setNftImage] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
   const { account } = useAccount();
-
-  const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (nftName === "" || nftDescription === "") {
-      setMessage("Please fill in all fields");
-    }
-  };
+  const { mintNFT, getAirdropBalance } = useGeneratedNFT();
 
   const generateImage = async () => {
     setMessage("Generating Image...");
-    const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2`;
+    const URL = `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1`;
     try {
       const response = await axios({
         url: URL,
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY}`,
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_HUGGING_FACE_API_KEY}`,
           Accept: "application/json",
           "Content-Type": "application/json",
         },
@@ -60,6 +55,67 @@ const Generative = () => {
     }
   };
 
+  const uploadImage = async (imageData: any) => {
+    setMessage("Uploading Image...");
+
+    if (!process.env.NEXT_PUBLIC_NFT_STORAGE_API_KEY) {
+      console.error("No NFT Storage API Key found");
+      return;
+    }
+
+    const nftStorage = new NFTStorage({
+      token: process.env.NEXT_PUBLIC_NFT_STORAGE_API_KEY,
+    });
+
+    const { ipnft } = await nftStorage.store({
+      image: new File([imageData], "image.jpeg", { type: "image/jpeg" }),
+      name: nftName,
+      description: nftDescription,
+    });
+
+    const url = `https://ipfs.io/ipfs/${ipnft}/metadata.json`;
+    setUrl(url);
+
+    return url;
+  };
+
+  const mintNft = async (tokenURI: string) => {
+    setMessage("Minting NFT...");
+
+    try {
+      await mintNFT(tokenURI);
+      setMessage("NFT Minted Successfully");
+    } catch (error) {
+      console.log("Error minting NFT: ", error);
+    }
+  };
+
+  const getBalance = async () => {
+    if (account) {
+      const balance = await getAirdropBalance(account);
+      setAirdropBalance(balance);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    try {
+      setIsWaiting(true);
+      const imageData = await generateImage();
+      const url = await uploadImage(imageData);
+      setUrl(url || "");
+      setIsWaiting(false);
+    } catch (error) {
+      console.log("Error generating image: ", error);
+      setIsWaiting(false);
+      setMessage("Error generating image");
+    }
+  };
+
+  useEffect(() => {
+    if (!account) return;
+    getBalance();
+  }, []);
+
   return (
     <>
       <div className="mt-10 lg:mt-40 flex flex-col items-center space-y-6 text-center lg:space-y-0 lg:justify-center">
@@ -67,54 +123,53 @@ const Generative = () => {
           Generative Art
         </h1>
         <div className="grid grid-cols-2 gap-6 ">
-          <form onSubmit={() => {}} className="flex flex-col gap-4 ">
-            <div className="justify-center items-center">
-              <input
-                type="text"
-                placeholder="Create a name..."
-                onChange={() => {}}
-                className="w-80 lg:h-14 bg-gray-100 rounded-md text-center text-gray-600 text-2xl font-bold lg:w-96"
-              />
-              <input
-                type="text"
-                placeholder="Create a description..."
-                onChange={() => {}}
-                className="mt-4 w-80 h-20 lg:w-50 lg:h-40 bg-gray-100 rounded-md text-center text-gray-600 text-2xl font-bold lg:w-96"
-              />
-            </div>
-            <div className="flex justify-center ">
+          <div className="justify-center items-center">
+            <input
+              type="text"
+              placeholder="Create a name..."
+              value={nftName}
+              onChange={e => setNftName(e.target.value)}
+              className="w-80 lg:h-14 bg-gray-100 rounded-md text-center text-gray-600 text-2xl font-bold lg:w-96"
+            />
+            <input
+              type="text"
+              placeholder="Create a description..."
+              value={nftDescription}
+              onChange={e => setNftDescription(e.target.value)}
+              className="mt-4 w-80 h-20 lg:w-50 lg:h-40 bg-gray-100 rounded-md text-center text-gray-600 text-2xl font-bold lg:w-96"
+            />
+            <div className="flex justify-center mt-4">
               <CustomButton
                 btnType="button"
                 title="Create Image"
-                styles="mt-[20px] text-xl w-22 h-12 lg:h-12 lg:w-20  flex-1"
-                handleClick={() => {}}
+                styles="text-xl w-22 h-12 lg:h-12 lg:w-20 flex-1"
+                handleClick={handleGenerateImage}
                 disabled={isWaiting || !account}
               />
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-4">
               <CustomButton
                 btnType="button"
-                title="Mint"
-                styles="mt-[10px] text-xl h-12 w-22"
-                handleClick={() => {}}
+                title={`Mint (${airdropBalance} left)`}
+                styles="text-xl h-12 w-22"
+                handleClick={() => mintNft(url || "")}
                 disabled={isWaiting || !account}
               />
             </div>
-          </form>
-
-          <div className="border border-white h-auto w-auto lg:h-[120] lg:w-[120]">
-            {!isWaiting && nftImage ? (
+          </div>
+          <div className="border border-white object-cover h-auto w-auto lg:h-[450px] lg:w-[380px]">
+            {nftImage ? (
               <Image
-                className="w-80 object-cover pb-10 lg:h-40 lg:w-96 "
+                className="w-80 object-cover pb-10 lg:h-40 lg:w-96"
                 src={nftImage}
                 alt="AI Generated Image"
                 width={500}
                 height={500}
               />
-            ) : isWaiting ? (
-              <Loader />
             ) : (
-              <></>
+              <div className="flex justify-center items-center h-full">
+                {isWaiting ? <Loader /> : <span>No image generated</span>}
+              </div>
             )}
           </div>
         </div>

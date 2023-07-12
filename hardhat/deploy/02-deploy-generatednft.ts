@@ -4,7 +4,7 @@ import { developmentChains, networkConfig } from "../hardhat-helper";
 import { saveFrontEndFiles, saveConfig } from "../utils/99-save-frontend-files";
 import { ethers, network } from "hardhat";
 import verify from "../utils/verify";
-import { GeneratedNFT } from "../typechain";
+import { GeneratedNFT, Airdrop } from "../typechain";
 
 const deployGeneratedNFT: DeployFunction = async (
   hre: HardhatRuntimeEnvironment
@@ -35,6 +35,17 @@ const deployGeneratedNFT: DeployFunction = async (
     "GeneratedNFT",
     generatedNft.address
   )) as GeneratedNFT;
+
+  //  Set approved contract address on Aidrop contract
+  const airdropInstance: Airdrop = (await ethers.getContractAt(
+    "Airdrop",
+    airdropAddress
+  )) as Airdrop;
+
+  await airdropInstance.setApprovedContract(generatedNftInstance.address);
+
+  log(`Set approved contract address on Airdrop contract`);
+  log("---------------------------------------------------------------");
 
   const contracts = [
     {
