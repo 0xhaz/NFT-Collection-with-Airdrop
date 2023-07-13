@@ -15,6 +15,7 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
     using Counters for Counters.Counter;
     Counters.Counter public s_tokenIds;
 
+    address private s_owner;
     uint256 private s_cost;
     Airdrop private airdropInterface;
     mapping(address => mapping(uint256 => bool)) private s_isTokenBurned;
@@ -24,42 +25,33 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
 
     event Mint(address indexed minter, uint256 indexed tokenId);
 
-    modifier airdropOwner() {
-        uint256 tokenId = airdropTokenId();
-        require(
-            airdropInterface.balanceOf(msg.sender, tokenId) > 0,
-            "GeneratedNFT: There is no token to claim"
-        );
-        require(!isTokenBurned(msg.sender), "GeneratedNFT: Token is burned");
-        _;
-    }
-
     constructor(
         address _airdropAddress,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint256 _cost
     ) ERC721(_name, _symbol) {
         s_owner = msg.sender;
         airdropInterface = Airdrop(_airdropAddress);
+        s_cost = _cost;
     }
 
-    function mint(string memory _tokenURI) external {
+    function mint(string memory _tokenURI) external payable {
         uint256 tokenId = airdropTokenId();
         uint256 balance = _getAirdropBalance(msg.sender);
 
-        require(balance > 0, "GeneratedNFT: Not enough tokens");
-
-        require(
-            balance > s_airdropTokenAmount[msg.sender][tokenId],
-            "GeneratedNFT: Token is burned"
-        );
-
         if (balance > 0) {
+            require(
+                balance > s_airdropTokenAmount[msg.sender][tokenId],
+                "GeneratedNFT: Token is burned"
+            );
             airdropInterface.burn(msg.sender, tokenId, 1);
             s_isTokenBurned[msg.sender][tokenId] = true;
+            s_airdropTokenAmount[msg.sender][tokenId]++;
             balance--;
+        } else {
+            require(msg.value >= s_cost, "GeneratedNFT: Not enough ether");
         }
-        console.log("balance: %s", balance);
 
         s_tokenIds.increment();
         uint256 newItemId = s_tokenIds.current();
@@ -73,12 +65,21 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         airdropInterface = Airdrop(_airdropAddress);
     }
 
-    function isTokenBurned(address _owner) public view returns (bool) {
+    function setCost(uint256 _cost) external onlyOwner {
+        s_cost = _cost;
+    }
+
+    function isTokenBurned(address _owner) external view returns (bool) {
         return s_isTokenBurned[_owner][airdropTokenId()];
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() external view returns (uint256) {
         return s_tokenIds.current();
+    }
+
+    function getAirdropAmount(address _owner) external view returns (uint256) {
+        uint256 tokenId = airdropTokenId();
+        return airdropInterface.balanceOf(_owner, tokenId);
     }
 
     function getAirdropAddress() external view returns (address) {

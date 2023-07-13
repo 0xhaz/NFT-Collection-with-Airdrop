@@ -5,6 +5,7 @@ import { generateMerkleTree } from "../scripts/00-generate-merkle-tree";
 import { MerkleTree } from "merkletreejs";
 import { keccak256 } from "ethers/lib/utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { providers } from "ethers";
 
 const tokens = (n: number) => {
   return ethers.utils.parseUnits(n.toString(), "ether");
@@ -73,11 +74,13 @@ describe("GeneratedNFT", () => {
   });
 
   beforeEach(async () => {
+    const COST = ether(10);
     const GeneratedNFT = await ethers.getContractFactory("GeneratedNFT");
     generatedNFT = await GeneratedNFT.deploy(
       airdrop.address,
       GENNAME,
-      GENSYMBOL
+      GENSYMBOL,
+      COST
     );
     await generatedNFT.deployed();
     // console.log("GeneratedNFT address: ", generatedNFT.address);
@@ -109,23 +112,14 @@ describe("GeneratedNFT", () => {
     });
   });
 
-  describe("GeneratedNFT minting", () => {
+  describe("GeneratedNFT minting with Airdrop", () => {
     describe("Succes", () => {
       beforeEach(async () => {
-        console.log(
-          "Balance token: ",
-          await airdrop.balanceOf(minter.address, 0)
-        );
-
         transaction = await generatedNFT.connect(minter).mint(URL);
         result = await transaction.wait();
-        console.log(
-          "Balance token after: ",
-          await airdrop.balanceOf(minter.address, 0)
-        );
       });
 
-      it("returns tokenURI, totalSupply and owner, airdrop balance return 5", async () => {
+      it("returns tokenURI, totalSupply, owner and airdrop balance ", async () => {
         result = await generatedNFT.ownerOf(1);
         expect(result).to.be.equal(minter.address);
         result = await generatedNFT.tokenURI("1");
@@ -133,8 +127,31 @@ describe("GeneratedNFT", () => {
         result = await generatedNFT.totalSupply();
         expect(result).to.be.equal(1);
         result = await airdrop.balanceOf(minter.address, 0);
-        console.log(await generatedNFT.balanceOf(minter.address));
         expect(result).to.be.equal(5);
+      });
+    });
+  });
+
+  describe("GeneratedNFT minting with Ether", () => {
+    describe("Success", () => {
+      beforeEach(async () => {
+        transaction = await generatedNFT
+          .connect(user1)
+          .mint(URL, { value: ethers.utils.parseEther("10") });
+      });
+
+      it("returns tokenURI, totalSupply and owner", async () => {
+        result = await generatedNFT.ownerOf(1);
+        expect(result).to.be.equal(user1.address);
+        result = await generatedNFT.tokenURI("1");
+        expect(result).to.be.equal(URL);
+        result = await generatedNFT.totalSupply();
+        expect(result).to.be.equal(1);
+      });
+
+      it("returns contract balance", async () => {
+        result = await ethers.provider.getBalance(deployer.address);
+        expect(result).to.greaterThan(ethers.utils.parseEther("10"));
       });
     });
   });
