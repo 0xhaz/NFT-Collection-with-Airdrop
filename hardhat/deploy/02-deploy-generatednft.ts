@@ -22,8 +22,9 @@ const deployGeneratedNFT: DeployFunction = async (
 
   const NAME = "AI Punks";
   const SYMBOL = "AIX";
+  const COST = ethers.utils.parseUnits("0.01", "ether");
 
-  const args = [airdropAddress, NAME, SYMBOL];
+  const args = [airdropAddress, NAME, SYMBOL, COST];
 
   const generatedNft: DeployResult = await deploy("GeneratedNFT", {
     from: deployer,

@@ -74,6 +74,7 @@ const Generative = () => {
     });
 
     const url = `https://ipfs.io/ipfs/${ipnft}/metadata.json`;
+    console.log("URL: ", url);
     setUrl(url);
 
     return url;
@@ -138,33 +139,43 @@ const Generative = () => {
               onChange={e => setNftDescription(e.target.value)}
               className="mt-4 w-80 h-20 lg:w-50 lg:h-40 bg-gray-100 rounded-md text-center text-gray-600 text-2xl font-bold lg:w-96"
             />
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-8">
               <CustomButton
                 btnType="button"
                 title="Create Image"
-                styles="text-xl w-22 h-12 lg:h-12 lg:w-20 flex-1"
+                styles="text-xl w-12 h-12  flex-1"
                 handleClick={handleGenerateImage}
                 disabled={isWaiting || !account}
               />
             </div>
-            <div className="flex justify-center mt-4">
-              <CustomButton
-                btnType="button"
-                title={`Mint (${airdropBalance} left)`}
-                styles="text-xl h-12 w-22"
-                handleClick={() => mintNft(url || "")}
-                disabled={isWaiting || !account}
-              />
+            <div className="flex justify-center mt-2">
+              {airdropBalance > 0 ? (
+                <CustomButton
+                  btnType="button"
+                  title={`Mint (${airdropBalance} left)`}
+                  styles="text-xl h-12 w-22"
+                  handleClick={() => mintNft(url || "")}
+                  disabled={isWaiting || !account}
+                />
+              ) : (
+                <CustomButton
+                  btnType="button"
+                  title="Mint"
+                  styles="text-xl h-12 w-22"
+                  handleClick={() => mintNft(url || "")}
+                  disabled={isWaiting || !account}
+                />
+              )}
             </div>
           </div>
-          <div className="border border-white object-cover h-auto w-auto lg:h-[450px] lg:w-[380px]">
+          <div className="border border-white object-cover h-full w-full ">
             {nftImage ? (
               <Image
-                className="w-80 object-cover pb-10 lg:h-40 lg:w-96"
+                className=" object-cover h-full w-full"
                 src={nftImage}
                 alt="AI Generated Image"
                 width={500}
-                height={500}
+                height={700}
               />
             ) : (
               <div className="flex justify-center items-center h-full">

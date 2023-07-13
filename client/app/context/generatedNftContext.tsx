@@ -77,7 +77,7 @@ export const GeneratedNFTProvider = ({
     async (address: string) => {
       const signer = accountProvider?.getSigner();
       try {
-        const balance = await generatedNFTContract?.balanceOf(address);
+        const balance = await generatedNFTContract?.getAirdropAmount(address);
         return balance || 0;
       } catch (error) {
         console.log("Error getting NFT: ", error);

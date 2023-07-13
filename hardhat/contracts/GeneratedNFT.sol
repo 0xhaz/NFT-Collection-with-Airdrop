@@ -41,14 +41,16 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         uint256 balance = _getAirdropBalance(msg.sender);
 
         if (balance > 0) {
-            require(
-                balance > s_airdropTokenAmount[msg.sender][tokenId],
-                "GeneratedNFT: Token is burned"
-            );
-            airdropInterface.burn(msg.sender, tokenId, 1);
-            s_isTokenBurned[msg.sender][tokenId] = true;
-            s_airdropTokenAmount[msg.sender][tokenId]++;
-            balance--;
+            while (balance > s_airdropTokenAmount[msg.sender][tokenId]) {
+                airdropInterface.burn(msg.sender, tokenId, 1);
+                s_isTokenBurned[msg.sender][tokenId] = true;
+                s_airdropTokenAmount[msg.sender][tokenId]++;
+                balance--;
+
+                if (balance == 0) {
+                    break;
+                }
+            }
         } else {
             require(msg.value >= s_cost, "GeneratedNFT: Not enough ether");
         }
