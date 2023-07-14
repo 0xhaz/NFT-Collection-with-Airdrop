@@ -95,6 +95,7 @@ const Generative = () => {
     if (account) {
       const balance = await getAirdropBalance(account);
       setAirdropBalance(balance);
+      console.log("Balance: ", balance.toString());
     }
   };
 
@@ -148,7 +149,7 @@ const Generative = () => {
                 disabled={isWaiting || !account}
               />
             </div>
-            <div className="flex justify-center mt-2">
+            <div className="flex justify-center ">
               {airdropBalance > 0 ? (
                 <CustomButton
                   btnType="button"

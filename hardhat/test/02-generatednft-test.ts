@@ -30,10 +30,11 @@ describe("GeneratedNFT", () => {
   let tree: MerkleTree;
   let deployer: SignerWithAddress,
     minter: SignerWithAddress,
-    user1: SignerWithAddress;
+    user1: SignerWithAddress,
+    user2: SignerWithAddress;
   let transaction: any, result: any;
   let airdrop: any;
-  let nft;
+  let nft: any;
   let generatedNFT: any;
 
   before(async () => {
@@ -91,6 +92,8 @@ describe("GeneratedNFT", () => {
     result = await transaction.wait();
 
     await airdrop.connect(deployer).setApprovedContract(generatedNFT.address);
+
+    // expect(await generatedNFT.getAirdropAmount(minter.address)).to.equal(5);
   });
 
   describe("GeneratedNFT Deployment", () => {
@@ -113,10 +116,16 @@ describe("GeneratedNFT", () => {
   });
 
   describe("GeneratedNFT minting with Airdrop", () => {
-    describe("Succes", () => {
+    describe("Success", () => {
       beforeEach(async () => {
-        transaction = await generatedNFT.connect(minter).mint(URL);
-        result = await transaction.wait();
+        // loop through the airdrop tokens and mint them
+        let balance = await airdrop.balanceOf(minter.address, 0);
+        for (let i = 0; i < balance; i++) {
+          transaction = await generatedNFT.connect(minter).mint(URL);
+          result = await transaction.wait();
+          //   console.log("Minted token: ", i);
+          //   console.log("Balance: ", balance);
+        }
       });
 
       it("returns tokenURI, totalSupply, owner and airdrop balance ", async () => {
@@ -125,9 +134,9 @@ describe("GeneratedNFT", () => {
         result = await generatedNFT.tokenURI("1");
         expect(result).to.be.equal(URL);
         result = await generatedNFT.totalSupply();
-        expect(result).to.be.equal(1);
-        result = await airdrop.balanceOf(minter.address, 0);
         expect(result).to.be.equal(5);
+        result = await airdrop.balanceOf(minter.address, 0);
+        expect(result).to.be.equal(0);
       });
     });
   });
@@ -137,7 +146,8 @@ describe("GeneratedNFT", () => {
       beforeEach(async () => {
         transaction = await generatedNFT
           .connect(user1)
-          .mint(URL, { value: ethers.utils.parseEther("10") });
+          .mint(URL, { value: ether(10) });
+        result = await transaction.wait();
       });
 
       it("returns tokenURI, totalSupply and owner", async () => {

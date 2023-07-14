@@ -16,9 +16,10 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
     Counters.Counter public s_tokenIds;
 
     address private s_owner;
-    uint256 private s_cost;
+    uint256 private s_cost = 0.01 ether;
     Airdrop private airdropInterface;
     mapping(address => mapping(uint256 => bool)) private s_isTokenBurned;
+    mapping(address => uint256[]) private s_airdropTokens;
     mapping(address => uint256) private s_ownerWallet;
     mapping(address => mapping(uint256 => uint256))
         private s_airdropTokenAmount;
@@ -37,29 +38,37 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
     }
 
     function mint(string memory _tokenURI) external payable {
-        uint256 tokenId = airdropTokenId();
-        uint256 balance = _getAirdropBalance(msg.sender);
+        uint256[] memory tokenIds = _airdropTokenId();
+        uint256 balance = _getAirdropBalance(msg.sender, tokenIds);
+        uint256 tokenId = tokenIds[0];
 
-        if (balance > 0) {
-            while (balance > s_airdropTokenAmount[msg.sender][tokenId]) {
-                airdropInterface.burn(msg.sender, tokenId, 1);
-                s_isTokenBurned[msg.sender][tokenId] = true;
-                s_airdropTokenAmount[msg.sender][tokenId]++;
-                balance--;
+        if (
+            balance > 0 &&
+            tokenIds.length > 0 &&
+            airdropInterface.ownerOf(tokenId) == msg.sender
+        ) {
+            require(
+                !s_isTokenBurned[msg.sender][tokenId],
+                "Token already burned"
+            );
 
-                if (balance == 0) {
-                    break;
-                }
-            }
+            airdropInterface.burn(msg.sender, tokenId, 1);
+
+            balance--;
         } else {
-            require(msg.value >= s_cost, "GeneratedNFT: Not enough ether");
+            require(
+                msg.value >= s_cost,
+                "Ether value sent is not correct for mint amount"
+            );
         }
 
         s_tokenIds.increment();
         uint256 newItemId = s_tokenIds.current();
-        _mint(msg.sender, newItemId);
+
+        _safeMint(msg.sender, newItemId);
         _setTokenURI(newItemId, _tokenURI);
         s_ownerWallet[msg.sender] = newItemId;
+
         emit Mint(msg.sender, newItemId);
     }
 
@@ -71,17 +80,27 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         s_cost = _cost;
     }
 
-    function isTokenBurned(address _owner) external view returns (bool) {
-        return s_isTokenBurned[_owner][airdropTokenId()];
+    function isTokenBurned(
+        address _owner,
+        uint256 _tokenId
+    ) external view returns (bool) {
+        return _isTokenBurned(_owner, _tokenId);
     }
 
     function totalSupply() external view returns (uint256) {
         return s_tokenIds.current();
     }
 
+    function getAirdropTokens(
+        address _owner
+    ) external view returns (uint256[] memory) {
+        uint256[] memory tokens = s_airdropTokens[_owner];
+        return tokens;
+    }
+
     function getAirdropAmount(address _owner) external view returns (uint256) {
-        uint256 tokenId = airdropTokenId();
-        return airdropInterface.balanceOf(_owner, tokenId);
+        uint256 balance = _getAirdropBalance(_owner, _airdropTokenId());
+        return balance;
     }
 
     function getAirdropAddress() external view returns (address) {
@@ -102,14 +121,57 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
     }
 
     function _getAirdropBalance(
-        address _owner
+        address _owner,
+        uint256[] memory _tokenIds
     ) internal view returns (uint256) {
-        uint256 tokenId = airdropTokenId();
-        return airdropInterface.balanceOf(_owner, tokenId);
+        uint256 balance = 0;
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            if (!s_isTokenBurned[_owner][_tokenIds[i]]) {
+                balance++;
+            }
+        }
+        return balance;
     }
 
-    function airdropTokenId() internal view returns (uint256) {
-        return airdropInterface.getTokenId(msg.sender);
+    function _isTokenBurned(
+        address _owner,
+        uint256 _tokenId
+    ) internal view returns (bool) {
+        return airdropInterface.balanceOf(_owner, _tokenId) == 0;
+    }
+
+    function _airdropTokenIds() internal view returns (uint256[] memory) {
+        return s_airdropTokens[msg.sender];
+    }
+
+    function _burnAirdropToken(address _owner, uint256 _tokenId) internal {
+        airdropInterface.burn(_owner, _tokenId, 1);
+
+        uint256[] storage tokens = s_airdropTokens[_owner];
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (tokens[i] == _tokenId) {
+                tokens[i] = tokens[tokens.length - 1];
+                tokens.pop();
+                break;
+            }
+        }
+    }
+
+    function _airdropTokenId() internal view returns (uint256[] memory) {
+        uint256[] memory tokenId = airdropInterface.getTokenId(msg.sender);
+        uint256 currentTokenId = 0;
+
+        for (uint256 i = 0; i < tokenId.length; i++) {
+            if (!s_isTokenBurned[msg.sender][tokenId[i]]) {
+                currentTokenId = tokenId[i];
+                break;
+            }
+        }
+
+        uint256[] memory tokenIds = new uint256[](1);
+        tokenIds[0] = currentTokenId;
+
+        return tokenIds;
     }
 
     function onERC1155Received(

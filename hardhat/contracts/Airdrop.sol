@@ -25,7 +25,7 @@ contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
 
     mapping(address => bool) public s_claimed;
     mapping(uint256 => bool) private s_exists;
-    mapping(address => uint256) private s_tokenIds;
+    mapping(address => uint256[]) private s_tokenIds;
     mapping(address => mapping(uint256 => uint256)) private s_nftTokenAmount;
     mapping(uint256 => address) public s_tokenOwners;
     mapping(uint256 => string) public s_tokenURIs;
@@ -82,17 +82,20 @@ contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
 
         require(numTokensToClaim > 0, "Airdrop: No tokens to claim");
 
+        uint256[] memory tokenIds = new uint256[](numTokensToClaim);
+
         for (uint256 i = 0; i < numTokensToClaim; i++) {
             uint256 tokenId = _getNftTokenByIndex(msg.sender, i);
-
-            _mint(msg.sender, tokenId, numTokensToClaim, "");
+            tokenIds[i] = tokenId;
 
             s_tokenOwners[tokenId] = msg.sender;
             s_tokenURIs[tokenId] = _generateTokenURI(msg.sender);
-            s_tokenIds[msg.sender] = tokenId;
+            s_tokenIds[msg.sender].push(tokenId);
 
             emit AirdropClaimed(msg.sender, tokenId);
         }
+
+        _mint(msg.sender, tokenIds, numTokensToClaim, "");
 
         s_claimed[msg.sender] = true;
     }
@@ -115,8 +118,8 @@ contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
         return s_claimed[_address];
     }
 
-    function ownerOf(uint256 tokenId) external view returns (bool) {
-        return balanceOf(msg.sender, tokenId) != 0;
+    function ownerOf(uint256 tokenId) external view returns (address) {
+        return s_tokenOwners[tokenId];
     }
 
     function setApprovedContract(address _contractAddress) external onlyOwner {
@@ -131,8 +134,28 @@ contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
         delete s_approvedContracts[_contractAddress];
     }
 
-    function getTokenId(address _owner) external view returns (uint256) {
+    function getTokenId(
+        address _owner
+    ) external view returns (uint256[] memory) {
         return s_tokenIds[_owner];
+    }
+
+    function burn(
+        address _account,
+        uint256 _id,
+        uint256 _amount
+    ) public virtual override {
+        require(
+            msg.sender == _account || s_tokenOwners[_id] == _account,
+            "Airdrop: caller is not the owner of the token"
+        );
+        require(
+            balanceOf(_account, _id) >= _amount,
+            "Airdrop: burn amount exceeds balance"
+        );
+        _burn(_account, _id, _amount);
+
+        emit TokenBurned(_account, _id);
     }
 
     /**
@@ -185,39 +208,36 @@ contract Airdrop is ERC1155, ERC1155Burnable, Ownable {
         }
     }
 
-    function burn(
-        address _account,
-        uint256 _id,
-        uint256 _amount
-    ) public virtual override {
-        require(
-            s_tokenOwners[_id] == _account,
-            "Airdrop: caller is not the owner of the token"
-        );
-        _burn(_account, _id, _amount);
-        emit TransferSingle(msg.sender, _account, address(0), _id, _amount);
-        emit TokenBurned(_account, _id);
-    }
-
     function _mint(
         address _to,
-        uint256 _tokenId,
+        uint256[] memory _tokenIds,
         uint256 _amount,
         bytes memory _data
-    ) internal override {
-        super._mint(_to, _tokenId, _amount, _data);
-        s_exists[_tokenId] = true;
-        s_tokenIds[_to] = _tokenId;
+    ) internal {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            super._mint(_to, _tokenIds[i], _amount, _data);
+            s_exists[_tokenIds[i]] = true;
+        }
     }
 
     function _burn(
         address _owner,
-        uint256 _tokenId,
+        uint256[] memory _tokenIds,
         uint256 _amount
-    ) internal override {
-        super._burn(_owner, _tokenId, _amount);
-        s_exists[_tokenId] = false;
-        s_tokenIds[_owner] = 0;
+    ) internal {
+        for (uint256 i = 0; i < _tokenIds.length; i++) {
+            super._burn(_owner, _tokenIds[i], _amount);
+            s_exists[_tokenIds[i]] = false;
+            s_tokenOwners[_tokenIds[i]] = address(0);
+            uint256[] storage userTokensIds = s_tokenIds[_owner];
+            for (uint256 j = 0; j < userTokensIds.length; j++) {
+                if (userTokensIds[j] == _tokenIds[i]) {
+                    userTokensIds[j] = userTokensIds[userTokensIds.length - 1];
+                    userTokensIds.pop();
+                    break;
+                }
+            }
+        }
     }
 
     function _setURI(string memory _uri) internal override {
