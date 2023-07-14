@@ -80,7 +80,7 @@ const Generative = () => {
     return url;
   };
 
-  const mintNft = async (tokenURI: string) => {
+  const mintNftHandler = async (tokenURI: string) => {
     setMessage("Minting NFT...");
 
     try {
@@ -155,7 +155,7 @@ const Generative = () => {
                   btnType="button"
                   title={`Mint (${airdropBalance} left)`}
                   styles="text-xl h-12 w-22"
-                  handleClick={() => mintNft(url || "")}
+                  handleClick={() => mintNftHandler(url || "")}
                   disabled={isWaiting || !account}
                 />
               ) : (
@@ -163,7 +163,7 @@ const Generative = () => {
                   btnType="button"
                   title="Mint"
                   styles="text-xl h-12 w-22"
-                  handleClick={() => mintNft(url || "")}
+                  handleClick={() => mintNftHandler(url || "")}
                   disabled={isWaiting || !account}
                 />
               )}

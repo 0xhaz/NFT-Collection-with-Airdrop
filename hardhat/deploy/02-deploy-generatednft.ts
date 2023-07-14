@@ -30,6 +30,7 @@ const deployGeneratedNFT: DeployFunction = async (
     from: deployer,
     args: args,
     log: true,
+    waitConfirmations: blockConfirmations || 1,
   });
 
   const generatedNftInstance: GeneratedNFT = (await ethers.getContractAt(

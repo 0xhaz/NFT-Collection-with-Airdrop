@@ -80,6 +80,10 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         s_cost = _cost;
     }
 
+    function getCost() external view returns (uint256) {
+        return s_cost;
+    }
+
     function isTokenBurned(
         address _owner,
         uint256 _tokenId

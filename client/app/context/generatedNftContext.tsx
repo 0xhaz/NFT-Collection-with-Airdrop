@@ -33,13 +33,11 @@ export const GeneratedNFTProvider = ({
       const contractWithSigner = generatedNFTContract?.connect(signer);
       const airdropContractWithSigner = airdropContract?.connect(signer);
       try {
-        // const approveTx = await airdropContractWithSigner?.setApprovalForAll(
-        //   generatedNFTContract?.address,
-        //   true
-        // );
-        // await approveTx?.wait();
+        const cost = await generatedNFTContract?.getCost();
 
-        const mintTx = await contractWithSigner?.mint(tokenURI);
+        const mintTx = await contractWithSigner?.mint(tokenURI, {
+          value: cost,
+        });
         await mintTx?.wait();
       } catch (error) {
         console.log("Error minting NFT: ", error);
