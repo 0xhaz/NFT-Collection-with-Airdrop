@@ -1,5 +1,5 @@
 "use client";
-import { useContext, useCallback, createContext } from "react";
+import { useContext, useCallback, createContext, useEffect } from "react";
 import { ethers } from "ethers";
 import { useContract, useAccount } from "./index";
 
@@ -84,6 +84,31 @@ export const GeneratedNFTProvider = ({
     },
     [generatedNFTContract]
   );
+
+  useEffect(() => {
+    if (!account) return;
+    const setApprovalForAll = async () => {
+      const signer = accountProvider?.getSigner();
+      const airdropContractWithSigner = airdropContract?.connect(signer);
+      try {
+        const isApproved = await airdropContractWithSigner?.isApprovedForAll(
+          account,
+          generatedNFTContract
+        );
+        if (!isApproved) {
+          const approveTokenTx =
+            await airdropContractWithSigner?.setApprovalForAll(
+              generatedNFTContract,
+              true
+            );
+          await approveTokenTx?.wait();
+        }
+      } catch (error) {
+        console.log("Error setting approval for all: ", error);
+      }
+    };
+    setApprovalForAll();
+  }, [accountProvider, generatedNFTContract, airdropContract]);
 
   return (
     <GeneratedNFTContext.Provider

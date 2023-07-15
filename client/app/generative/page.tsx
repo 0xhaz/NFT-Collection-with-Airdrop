@@ -86,6 +86,11 @@ const Generative = () => {
     try {
       await mintNFT(tokenURI);
       setMessage("NFT Minted Successfully");
+      setNftName("");
+      setNftDescription("");
+
+      const updateBalance = await getAirdropBalance(account || "");
+      setAirdropBalance(updateBalance);
     } catch (error) {
       console.log("Error minting NFT: ", error);
     }

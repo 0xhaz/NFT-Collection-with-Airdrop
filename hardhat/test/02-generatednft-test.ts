@@ -58,7 +58,6 @@ describe("GeneratedNFT", () => {
 
     tree = await generateMerkleTree();
 
-    [deployer, minter, user1] = await ethers.getSigners();
     // console.log("Deployer address: ", deployer.address);
     // console.log("Minter address: ", minter.address);
 
@@ -121,10 +120,13 @@ describe("GeneratedNFT", () => {
         // loop through the airdrop tokens and mint them
         let balance = await airdrop.balanceOf(minter.address, 0);
         for (let i = 0; i < balance; i++) {
-          transaction = await generatedNFT.connect(minter).mint(URL);
+          transaction = await generatedNFT
+            .connect(minter)
+            .mint(URL, { value: ethers.utils.parseEther("10") });
           result = await transaction.wait();
-          //   console.log("Minted token: ", i);
-          //   console.log("Balance: ", balance);
+
+          // console.log("Minted token: ", i);
+          // console.log("Balance: ", balance);
         }
       });
 
@@ -144,6 +146,13 @@ describe("GeneratedNFT", () => {
   describe("GeneratedNFT minting with Ether", () => {
     describe("Success", () => {
       beforeEach(async () => {
+        [user1] = await ethers.getSigners();
+
+        // console.log(
+        //   "User1 Balance: ",
+        //   await airdrop.balanceOf(user1.address, 0)
+        // );
+
         transaction = await generatedNFT
           .connect(user1)
           .mint(URL, { value: ether(10) });
