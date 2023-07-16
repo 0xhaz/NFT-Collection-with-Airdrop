@@ -8,6 +8,7 @@ interface GeneratedNFTContextProps {
   getOwnedTokens: () => Promise<number[]>;
   getAllTokens: () => Promise<number[]>;
   getAirdropBalance: (address: string) => Promise<number>;
+  setApprovalForAll: (address: string) => Promise<void>;
 }
 
 export const GeneratedNFTContext = createContext<GeneratedNFTContextProps>({
@@ -15,6 +16,7 @@ export const GeneratedNFTContext = createContext<GeneratedNFTContextProps>({
   getOwnedTokens: async () => [],
   getAllTokens: async () => [],
   getAirdropBalance: async () => 0,
+  setApprovalForAll: async (address: string) => {},
 });
 
 export type GeneratedNFTDataProviderProps = {
@@ -34,11 +36,20 @@ export const GeneratedNFTProvider = ({
       const airdropContractWithSigner = airdropContract?.connect(signer);
       try {
         const cost = await generatedNFTContract?.getCost();
+        const isAirdropTokenHolder =
+          await airdropContractWithSigner?.isTokenExists(account);
+        const balance = await contractWithSigner?.getAirdropBalance(account);
+        console.log("Balance: ", balance.toString());
 
-        const mintTx = await contractWithSigner?.mint(tokenURI, {
-          value: cost,
-        });
-        await mintTx?.wait();
+        if (isAirdropTokenHolder && balance > 0) {
+          const mintTx = await contractWithSigner?.mint(tokenURI);
+          await mintTx?.wait();
+        } else {
+          const mintTx = await contractWithSigner?.mint(tokenURI, {
+            value: cost,
+          });
+          await mintTx?.wait();
+        }
       } catch (error) {
         console.log("Error minting NFT: ", error);
         throw error;
@@ -85,20 +96,19 @@ export const GeneratedNFTProvider = ({
     [generatedNFTContract]
   );
 
-  useEffect(() => {
-    if (!account) return;
-    const setApprovalForAll = async () => {
+  const setApprovalForAll = useCallback(
+    async (address: string) => {
       const signer = accountProvider?.getSigner();
       const airdropContractWithSigner = airdropContract?.connect(signer);
       try {
         const isApproved = await airdropContractWithSigner?.isApprovedForAll(
-          account,
-          generatedNFTContract
+          address,
+          generatedNFTContract?.address
         );
         if (!isApproved) {
           const approveTokenTx =
             await airdropContractWithSigner?.setApprovalForAll(
-              generatedNFTContract,
+              generatedNFTContract?.address,
               true
             );
           await approveTokenTx?.wait();
@@ -106,9 +116,9 @@ export const GeneratedNFTProvider = ({
       } catch (error) {
         console.log("Error setting approval for all: ", error);
       }
-    };
-    setApprovalForAll();
-  }, [accountProvider, generatedNFTContract, airdropContract]);
+    },
+    [generatedNFTContract, airdropContract, account]
+  );
 
   return (
     <GeneratedNFTContext.Provider
@@ -117,6 +127,7 @@ export const GeneratedNFTProvider = ({
         getOwnedTokens,
         getAllTokens,
         getAirdropBalance,
+        setApprovalForAll,
       }}
     >
       {children}

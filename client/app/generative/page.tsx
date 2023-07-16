@@ -17,7 +17,7 @@ const Generative = () => {
   const [url, setUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<string>("");
   const { account } = useAccount();
-  const { mintNFT, getAirdropBalance } = useGeneratedNFT();
+  const { mintNFT, getAirdropBalance, setApprovalForAll } = useGeneratedNFT();
 
   const generateImage = async () => {
     setMessage("Generating Image...");
@@ -84,6 +84,11 @@ const Generative = () => {
     setMessage("Minting NFT...");
 
     try {
+      const airdropBalance = await getAirdropBalance(account || "");
+      if (airdropBalance > 0) {
+        setApprovalForAll(account || "");
+      }
+
       await mintNFT(tokenURI);
       setMessage("NFT Minted Successfully");
       setNftName("");
@@ -121,7 +126,7 @@ const Generative = () => {
   useEffect(() => {
     if (!account) return;
     getBalance();
-  }, []);
+  }, [account]);
 
   return (
     <>

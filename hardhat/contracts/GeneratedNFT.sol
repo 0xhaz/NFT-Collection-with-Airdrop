@@ -37,7 +37,10 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
 
     function mint(string memory _tokenURI) external payable {
         uint256 _balance = _getAirdropBalance(msg.sender);
-        if (_balance > 0 && airdropInterface.isTokenExists(msg.sender)) {
+        bool isAirdropTokenHolder = (_balance > 0 &&
+            airdropInterface.isTokenExists(msg.sender));
+
+        if (isAirdropTokenHolder) {
             uint256 _tokenId = airdropInterface.getTokenId(msg.sender);
 
             // Check if the caller is the owner of the token or approved to transfer
@@ -103,8 +106,8 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         return s_ownerWallet[msg.sender];
     }
 
-    function getAirdropBalance(address _owner) external returns (uint256) {
-        return _getAirdropBalance(_owner);
+    function getAirdropBalance(address _owner) external view returns (uint256) {
+        return airdropInterface.balanceOf(_owner, _airdropTokenIds(_owner));
     }
 
     function _getAirdropBalance(address _owner) internal returns (uint256) {
@@ -156,5 +159,13 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
         bytes calldata
     ) external pure override returns (bytes4) {
         return this.onERC1155BatchReceived.selector;
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override(ERC721URIStorage, IERC165) returns (bool) {
+        return
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

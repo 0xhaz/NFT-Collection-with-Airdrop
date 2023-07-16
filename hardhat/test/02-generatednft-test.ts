@@ -119,11 +119,18 @@ describe("GeneratedNFT", () => {
       beforeEach(async () => {
         // loop through the airdrop tokens and mint them
         let balance = await airdrop.balanceOf(minter.address, 0);
+        let isTokenExists = await airdrop.isTokenExists(minter.address);
+
         for (let i = 0; i < balance; i++) {
-          transaction = await generatedNFT
-            .connect(minter)
-            .mint(URL, { value: ethers.utils.parseEther("10") });
-          result = await transaction.wait();
+          if (isTokenExists) {
+            transaction = await generatedNFT.connect(minter).mint(URL);
+            result = await transaction.wait();
+          } else if (balance == 0) {
+            transaction = await generatedNFT
+              .connect(minter)
+              .mint(URL, { value: ethers.utils.parseEther("10") });
+            result = await transaction.wait();
+          }
 
           // console.log("Minted token: ", i);
           // console.log("Balance: ", balance);
