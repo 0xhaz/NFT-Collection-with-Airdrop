@@ -224,16 +224,26 @@ describe("NFT", () => {
   describe("Displaying NFTs", () => {
     let transaction: any, result;
     beforeEach(async () => {
-      transaction = await nft.connect(minter).mint(3, { value: ether(30) });
+      transaction = await nft
+        .connect(minter)
+        .mint(3, { value: ethers.utils.parseEther("30") });
       result = await transaction.wait();
     });
 
     it("returns an array of token IDs owned by the minter", async () => {
-      let tokenIds = await nft.getWalletOwner(minter.address);
+      const [tokenIds, tokenURIs] = await nft.getWalletOwner(minter.address);
+      console.log(tokenIds);
+      console.log(tokenURIs);
       expect(tokenIds.length).to.equal(3);
-      expect(tokenIds[0]).to.equal(0);
-      expect(tokenIds[1]).to.equal(1);
-      expect(tokenIds[2]).to.equal(2);
+      expect(tokenURIs.length).to.equal(3);
+      for (let i = 0; i < tokenIds.length; i++) {
+        expect(await nft.ownerOf(tokenIds[i])).to.equal(minter.address);
+        expect(await nft.tokenURI(tokenIds[i])).to.equal(
+          `${BASE_URI}` + tokenIds[i] + ".json"
+        );
+        expect(tokenIds[i].toString()).to.equal(String(i));
+        expect(tokenURIs[i]).to.equal(`${BASE_URI}` + tokenIds[i] + ".json");
+      }
     });
   });
 

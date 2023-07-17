@@ -2,6 +2,8 @@ import { ethers } from "ethers";
 
 export {};
 
+declare module "js-ipfs-fetch";
+
 declare global {
   type NFTCollections = {
     name: string;

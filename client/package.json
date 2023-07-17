@@ -18,6 +18,7 @@
     "eslint": "8.43.0",
     "eslint-config-next": "13.4.7",
     "ethers": "5.7.2",
+    "js-ipfs-fetch": "^5.0.0",
     "merkletreejs": "^0.3.10",
     "next": "13.4.7",
     "nft.storage": "^7.1.0",

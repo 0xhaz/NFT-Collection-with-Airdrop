@@ -1,17 +1,18 @@
 import React from "react";
 import Image from "next/image";
+import loader from "public/assets/loader.gif";
 
 const Loader = () => {
   return (
-    <div className="fixed inset-0 z-10 h-screen bg-[rgba(0, 0, 0, 0.9)] flex items-center justify-center flex-col">
+    <div className="fixed inset-0 z-10 h-screen bg-[rgba(0,0,0,0.7)] flex items-center justify-center flex-col">
       <Image
         className="h-80 w-80 object-contain "
-        src="/assets/loader.gif"
-        width={0}
-        height={0}
+        src={loader}
+        width={100}
+        height={100}
         alt="Loader"
       />
-      <p className="mt-[20px] font-bold text-[20px] text-white text-center">
+      <p className=" font-bold text-[20px] text-white text-center">
         Transaction is in progress <br /> Please wait...
       </p>
     </div>

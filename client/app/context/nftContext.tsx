@@ -2,8 +2,7 @@
 import { useContext, useCallback, createContext } from "react";
 import { BigNumber, ethers } from "ethers";
 import { useContract, useAccount } from "./index";
-
-type MintAmount = ethers.BigNumber;
+import axios from "axios";
 
 interface NFTContextProps {
   mintNft: (mintAmount: number) => Promise<void>;
@@ -11,6 +10,9 @@ interface NFTContextProps {
   getCost: () => Promise<string>;
   getTotalSupply: () => Promise<number>;
   getBalance: (address: string) => Promise<number>;
+  getWallet: (
+    address: string
+  ) => Promise<{ tokenIds: number[]; tokenURIs: string[] }>;
 }
 
 export const NFTDataContext = createContext<NFTContextProps>({
@@ -19,6 +21,7 @@ export const NFTDataContext = createContext<NFTContextProps>({
   getCost: async () => ethers.utils.formatEther("0"),
   getTotalSupply: async () => 0,
   getBalance: async () => 0,
+  getWallet: async () => ({ tokenIds: [], tokenURIs: [] }),
 });
 
 export type NFTDataProviderProps = {
@@ -53,6 +56,7 @@ export const NFTDataProvider = ({
 
   const getNft = useCallback(async () => {
     const signer = accountProvider?.getSigner();
+
     try {
       const ownedTokens = await nftContract?.connect(signer).getNFT();
       return ownedTokens || [];
@@ -95,6 +99,40 @@ export const NFTDataProvider = ({
     [nftContract]
   );
 
+  const getWallet = useCallback(
+    async (address: string) => {
+      if (!accountProvider) throw new Error("Account provider not found");
+      const signer = accountProvider.getSigner();
+      const contractWithSigner = nftContract?.connect(signer);
+
+      try {
+        const walletData = await contractWithSigner.getWalletOwner(address);
+        const tokenIds: number[] = walletData[0];
+        const tokenURIs: string[] = walletData[1];
+
+        const validTokenIds: number[] = [];
+        const validTokenURIs: string[] = [];
+
+        for (let i = 0; i < tokenIds.length; i++) {
+          const tokenURI = tokenURIs[i];
+          if (typeof tokenURI === "string" && tokenURI.startsWith("ipfs://")) {
+            validTokenIds.push(tokenIds[i]);
+            validTokenURIs.push(tokenURI);
+          }
+        }
+
+        return {
+          tokenIds: validTokenIds,
+          tokenURIs: validTokenURIs,
+        };
+      } catch (error) {
+        console.log("Error getting NFT: ", error);
+        throw error;
+      }
+    },
+    [nftContract, accountProvider]
+  );
+
   return (
     <NFTDataContext.Provider
       value={{
@@ -103,6 +141,7 @@ export const NFTDataProvider = ({
         getCost,
         getTotalSupply,
         getBalance,
+        getWallet,
       }}
     >
       {children}

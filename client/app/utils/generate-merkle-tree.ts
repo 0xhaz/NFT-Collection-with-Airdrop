@@ -18,9 +18,9 @@ export async function generateMerkleTree(): Promise<MerkleTree> {
   const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
 
   const root = tree.getHexRoot();
-  console.log("Merkle root: ", root);
-  console.log("Leaves: ", leaves);
-  console.log("Expected Merkle root: ", NEXT_PUBLIC_MERKLE_ROOT);
+  // console.log("Merkle root: ", root);
+  // console.log("Leaves: ", leaves);
+  // console.log("Expected Merkle root: ", NEXT_PUBLIC_MERKLE_ROOT);
 
   return tree;
 }
@@ -32,18 +32,18 @@ export function verifyProof(
 ): boolean {
   const leaf = hexlify(targetAddress.toLowerCase());
 
-  console.log("Leaf:", leaf);
-  console.log("Proof:", proof);
-  console.log("Merkle Root:", merkleTree.getHexRoot());
+  // console.log("Leaf:", leaf);
+  // console.log("Proof:", proof);
+  // console.log("Merkle Root:", merkleTree.getHexRoot());
 
   const convertedProof = proof.map(item => Buffer.from(item.slice(2), "hex"));
 
-  console.log("Proof (Buffer):", convertedProof);
-  console.log("Leaf (Buffer):", Buffer.from(leaf.slice(2), "hex"));
-  console.log(
-    "Merkle Root (Buffer):",
-    Buffer.from(merkleTree.getHexRoot().slice(2), "hex")
-  );
+  // console.log("Proof (Buffer):", convertedProof);
+  // console.log("Leaf (Buffer):", Buffer.from(leaf.slice(2), "hex"));
+  // console.log(
+  //   "Merkle Root (Buffer):",
+  //   Buffer.from(merkleTree.getHexRoot().slice(2), "hex")
+  // );
 
   const isValidProof = merkleTree.verify(
     convertedProof,
@@ -51,7 +51,7 @@ export function verifyProof(
     Buffer.from(merkleTree.getHexRoot().slice(2), "hex")
   );
 
-  console.log("IsValidProof:", isValidProof);
+  // console.log("IsValidProof:", isValidProof);
 
   return isValidProof;
 }
