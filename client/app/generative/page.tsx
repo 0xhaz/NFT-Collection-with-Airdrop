@@ -9,7 +9,6 @@ import CustomButton from "../components/CustomButton";
 
 const Generative = () => {
   const [isWaiting, setIsWaiting] = useState<boolean>(false);
-  const [nft, setNft] = useState(null);
   const [nftName, setNftName] = useState<string>("");
   const [nftDescription, setNftDescription] = useState<string>("");
   const [airdropBalance, setAirdropBalance] = useState<number>(0);

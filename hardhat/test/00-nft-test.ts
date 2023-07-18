@@ -233,7 +233,7 @@ describe("NFT", () => {
     it("returns an array of token IDs owned by the minter", async () => {
       const [tokenIds, tokenURIs] = await nft.getWalletOwner(minter.address);
       console.log(tokenIds);
-      console.log(tokenURIs);
+
       expect(tokenIds.length).to.equal(3);
       expect(tokenURIs.length).to.equal(3);
       for (let i = 0; i < tokenIds.length; i++) {

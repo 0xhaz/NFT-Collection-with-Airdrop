@@ -7,6 +7,7 @@ type Proof = ethers.Bytes[];
 
 interface AirdropContextProps {
   claimAirdrop: (proof: Proof) => Promise<void>;
+  isTokenExists: (address: string) => Promise<boolean>;
   canClaim: (proof: Proof) => Promise<boolean>;
   burnToken: (tokenId: number) => Promise<void>;
   getNFTTokens: (address: string) => Promise<number[]>;
@@ -15,6 +16,7 @@ interface AirdropContextProps {
 
 export const NFTAirdropDataContext = createContext<AirdropContextProps>({
   claimAirdrop: async () => {},
+  isTokenExists: async () => false,
   canClaim: async () => false,
   burnToken: async () => {},
   getNFTTokens: async () => [],
@@ -51,6 +53,21 @@ export const NFTAirdropProvider = ({
       }
     },
     [airdropContract, account]
+  );
+
+  const isTokenExists = useCallback(
+    async (address: string) => {
+      const signer = accountProvider?.getSigner();
+      const contractWithSigner = airdropContract?.connect(signer);
+      try {
+        const isTokenExists = await contractWithSigner?.isTokenExists(address);
+        return isTokenExists || false;
+      } catch (error) {
+        console.log("Error getting NFT: ", error);
+        throw error;
+      }
+    },
+    [airdropContract]
   );
 
   const canClaim = useCallback(
@@ -118,6 +135,7 @@ export const NFTAirdropProvider = ({
     <NFTAirdropDataContext.Provider
       value={{
         claimAirdrop,
+        isTokenExists,
         canClaim,
         burnToken,
         getNFTTokens,

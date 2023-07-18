@@ -113,7 +113,7 @@ export const NFTDataProvider = ({
         const validTokenIds: number[] = [];
         const validTokenURIs: string[] = [];
 
-        for (let i = 0; i < tokenIds.length; i++) {
+        for (let i = 1; i < tokenURIs.length; i++) {
           const tokenURI = tokenURIs[i];
           if (typeof tokenURI === "string" && tokenURI.startsWith("ipfs://")) {
             validTokenIds.push(tokenIds[i]);
