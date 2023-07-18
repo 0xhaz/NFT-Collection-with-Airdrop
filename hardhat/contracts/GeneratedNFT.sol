@@ -18,6 +18,7 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
     address private s_owner;
     uint256 private s_cost;
     Airdrop private airdropInterface;
+
     mapping(address => mapping(uint256 => bool)) private s_isTokenBurned;
     mapping(address => mapping(uint256 => uint256)) private s_airdropTokens;
     mapping(address => uint256) private s_ownerWallet;
@@ -85,6 +86,33 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
 
     function getCost() external view returns (uint256) {
         return s_cost;
+    }
+
+    function getTokenURIsByAddress(
+        address _owner
+    ) external view returns (string[] memory) {
+        uint256 totalTokens = s_tokenIds.current();
+        uint256 ownerTokenCount = 0;
+
+        for (uint256 i = 0; i < totalTokens; i++) {
+            uint256 tokenId = i + 1;
+            if (ownerOf(tokenId) == _owner) {
+                ownerTokenCount++;
+            }
+        }
+
+        string[] memory tokenURIs = new string[](ownerTokenCount);
+        uint256 tokenIndex = 0;
+
+        for (uint256 i = 0; i < totalTokens; i++) {
+            uint256 tokenId = i + 1;
+            if (ownerOf(tokenId) == _owner) {
+                tokenURIs[tokenIndex] = tokenURI(tokenId);
+                tokenIndex++;
+            }
+        }
+
+        return tokenURIs;
     }
 
     function isTokenBurned(

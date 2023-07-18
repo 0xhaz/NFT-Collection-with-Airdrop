@@ -31,14 +31,15 @@ describe("GeneratedNFT", () => {
   let deployer: SignerWithAddress,
     minter: SignerWithAddress,
     user1: SignerWithAddress,
-    user2: SignerWithAddress;
+    user2: SignerWithAddress,
+    user3: SignerWithAddress;
   let transaction: any, result: any;
   let airdrop: any;
   let nft: any;
   let generatedNFT: any;
 
   before(async () => {
-    [deployer, minter] = await ethers.getSigners();
+    [deployer, minter, user1, user2] = await ethers.getSigners();
 
     const NFT = await ethers.getContractFactory("NFT");
     nft = await NFT.deploy(
@@ -153,20 +154,14 @@ describe("GeneratedNFT", () => {
   describe("GeneratedNFT minting with Ether", () => {
     describe("Success", () => {
       beforeEach(async () => {
-        [user1] = await ethers.getSigners();
+        [user1, user2, user3] = await ethers.getSigners();
+      });
 
-        // console.log(
-        //   "User1 Balance: ",
-        //   await airdrop.balanceOf(user1.address, 0)
-        // );
-
+      it("returns tokenURI, totalSupply and owner", async () => {
         transaction = await generatedNFT
           .connect(user1)
           .mint(URL, { value: ether(10) });
         result = await transaction.wait();
-      });
-
-      it("returns tokenURI, totalSupply and owner", async () => {
         result = await generatedNFT.ownerOf(1);
         expect(result).to.be.equal(user1.address);
         result = await generatedNFT.tokenURI("1");
@@ -178,6 +173,54 @@ describe("GeneratedNFT", () => {
       it("returns contract balance", async () => {
         result = await ethers.provider.getBalance(deployer.address);
         expect(result).to.greaterThan(ethers.utils.parseEther("10"));
+      });
+
+      it("should retrieve all minted URIs for an address", async () => {
+        // Mint some tokens to user1
+        await generatedNFT
+          .connect(user1)
+          .mint("TokenURI1", { value: ethers.utils.parseEther("10") });
+        await generatedNFT
+          .connect(user1)
+          .mint("TokenURI2", { value: ethers.utils.parseEther("10") });
+        await generatedNFT
+          .connect(user1)
+          .mint("TokenURI3", { value: ethers.utils.parseEther("10") });
+
+        // Mint tokens to user2
+        await generatedNFT
+          .connect(user2)
+          .mint("TokenURI4", { value: ethers.utils.parseEther("10") });
+
+        // Get the list of token URIs for user1
+        const user1TokenURIs = await generatedNFT.getTokenURIsByAddress(
+          user1.address
+        );
+
+        // Check if the retrieved token URIs match the expected values
+        expect(user1TokenURIs).to.have.lengthOf(3);
+        expect(user1TokenURIs[0]).to.equal("TokenURI1");
+        expect(user1TokenURIs[1]).to.equal("TokenURI2");
+        expect(user1TokenURIs[2]).to.equal("TokenURI3");
+
+        // Get the list of token URIs for user2
+        const user2TokenURIs = await generatedNFT.getTokenURIsByAddress(
+          user2.address
+        );
+
+        // Check if the retrieved token URIs match the expected values
+        expect(user2TokenURIs).to.have.lengthOf(1);
+        expect(user2TokenURIs[0]).to.equal("TokenURI4");
+      });
+
+      it("should return an empty array for an address with no minted tokens", async () => {
+        // Get the list of token URIs for deployer (should be empty as no tokens are minted yet)
+        const deployerTokenURIs = await generatedNFT.getTokenURIsByAddress(
+          user3.address
+        );
+
+        // Check if the retrieved token URIs are an empty array
+        expect(deployerTokenURIs).to.have.lengthOf(0);
       });
     });
   });

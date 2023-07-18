@@ -85,9 +85,12 @@ const Gallery = () => {
 
   return (
     <>
-      <div className="mt-10 lg:mt-40 flex flex-col space-y-6 lg:space-y-0 ">
+      <div className="mt-10  flex flex-col space-y-6 lg:space-y-0 ">
         <h1 className="text-3xl font-bold lg:text-5xl lg:font-extrabold mb-10">
-          My Collections
+          My{" "}
+          <span className="font-extrabold underline decoration-pink-600/50">
+            Collections
+          </span>
         </h1>
         <div className="flex flex-1 ">
           <h1 className="font-extralight sm:w-80">
