@@ -1,24 +1,44 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import Modal from "../modal/page";
+import Modal from "react-modal";
+import { useRouter } from "next/router";
+import NFTModal from "../nftModal/page";
+
+type Attribute = {
+  token_id: number | string;
+  trait_type: string;
+  value: string;
+  attributeList?: Attribute[];
+};
 
 type NFTCardProps = {
   tokenId: number;
   tokenURI: string;
+  attributes?: Attribute[] | undefined;
+  handleClick: () => void;
 };
 
-const NFTCard = ({ tokenId, tokenURI }: NFTCardProps) => {
+const NFTCard = ({
+  tokenId,
+  tokenURI,
+  attributes,
+  handleClick,
+}: NFTCardProps) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
 
   useEffect(() => {
-    // This effect is used to determine when the image has loaded
     setLoading(false);
   }, []);
 
   const toggleModal = () => {
     setShowModal(prev => !prev);
+  };
+
+  const handleCardClick = () => {
+    handleClick();
+    setSelectedTokenId(tokenId);
   };
 
   return (
@@ -44,14 +64,24 @@ const NFTCard = ({ tokenId, tokenURI }: NFTCardProps) => {
         </div>
       </div>
 
-      {showModal && (
-        <Modal
-          isLoading={false}
-          tokenId={tokenId}
-          tokenURI={tokenURI}
-          handleClick={toggleModal}
-        />
-      )}
+      <Modal
+        isOpen={showModal}
+        onRequestClose={toggleModal}
+        contentLabel="NFT Modal"
+        className="w-[850px] h-[600px] bg-black border rounded-lg m-auto p-0"
+        overlayClassName="fixed inset-0 bg-gray-500 bg-opacity-75 flex justify-center items-center"
+        ariaHideApp={false}
+      >
+        {showModal && (
+          <NFTModal
+            isLoading={loading}
+            tokenId={tokenId}
+            tokenURI={tokenURI}
+            handleClick={toggleModal}
+            attributes={attributes}
+          />
+        )}
+      </Modal>
     </>
   );
 };

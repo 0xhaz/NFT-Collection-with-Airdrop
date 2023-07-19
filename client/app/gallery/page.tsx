@@ -8,8 +8,15 @@ import {
 } from "../context/";
 import NFTCard from "../components/NFTCard";
 import Loader from "../components/Loader";
-import axios from "axios";
+import axios, { all } from "axios";
 import Image from "next/image";
+
+type Attribute = {
+  token_id: number | string;
+  trait_type: string;
+  value: string;
+  attributes?: Attribute[] | undefined;
+};
 
 const Gallery = () => {
   const { getWallet } = useNFT();
@@ -19,12 +26,16 @@ const Gallery = () => {
   const [walletData, setWalletData] = useState<{
     tokenIds: number[];
     tokenURIs: string[];
+    metadata: string[];
   }>({
     tokenIds: [],
     tokenURIs: [],
+    metadata: [],
   });
   const [airdropTokens, setAirdropTokens] = useState<number>(0);
   const [tokenExists, setTokenExists] = useState<boolean>(false);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
 
   const fetchWallet = async () => {
     try {
@@ -32,12 +43,17 @@ const Gallery = () => {
       const wallet = await getWallet(account);
 
       const metadata = wallet.tokenURIs.map(async tokenURI => {
-        const { data } = await axios.get(
-          tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+        const imageUrl = tokenURI?.replace?.(
+          "ipfs://",
+          "https://ipfs.io/ipfs/"
         );
-        const imageUrl = data.image;
 
-        return imageUrl;
+        if (imageUrl) {
+          const { data } = await axios.get(imageUrl);
+          return data.image;
+        }
+
+        return "";
       });
 
       const metadataResponse = await Promise.all(metadata);
@@ -46,19 +62,10 @@ const Gallery = () => {
         ...prev,
         tokenIds: wallet.tokenIds,
         tokenURIs: metadataResponse,
+        metadata: metadataResponse,
       }));
     } catch (error) {
       console.log("Error fetching wallet: ", error);
-    }
-  };
-
-  const fetchAirdropTokens = async () => {
-    try {
-      if (!account) return;
-      const tokens = await getAirdropBalance(account);
-      setAirdropTokens(tokens);
-    } catch (error) {
-      console.log("Error fetching airdrop tokens: ", error);
     }
   };
 
@@ -72,12 +79,82 @@ const Gallery = () => {
     }
   };
 
+  const fetchAirdropTokens = async () => {
+    try {
+      if (!account) return;
+      const tokens = await getAirdropBalance(account);
+      setAirdropTokens(tokens);
+    } catch (error) {
+      console.log("Error fetching airdrop tokens: ", error);
+    }
+  };
+
+  // fetch attributes from tokenURI metadata
+  const fetchMetadata = async () => {
+    try {
+      if (!account) return;
+      const walletData = await getWallet(account);
+
+      let data = await Promise.all(
+        walletData.tokenURIs.map(async tokenURI => {
+          if (tokenURI.startsWith("ipfs://")) {
+            const ipfsUrl = tokenURI.replace(
+              "ipfs://",
+              "https://ipfs.io/ipfs/"
+            );
+            const { data } = await axios.get(ipfsUrl);
+            return data;
+          }
+        })
+      );
+
+      return data;
+    } catch (error) {
+      console.log("Error fetching Metadata: ", error);
+    }
+  };
+
   useEffect(() => {
     if (!account) return;
+
     fetchWallet();
-    fetchAirdropTokens();
     checkTokenExists();
+    fetchAirdropTokens();
   }, [account, getWallet]);
+
+  useEffect(() => {
+    if (walletData.metadata.length === 0) return;
+
+    const fetchAttributesForAllNFTs = async () => {
+      try {
+        if (!account) return;
+
+        let metadata = await fetchMetadata();
+
+        const allAttributes: Attribute[] = [];
+
+        metadata?.forEach((data, index) => {
+          const attributesForNFT: Attribute[] = data.attributes.map(
+            (attr: any) => {
+              return {
+                token_id: walletData.tokenIds[index].toString(),
+                trait_type: attr.trait_type,
+                value: attr.value,
+              };
+            }
+          );
+
+          allAttributes.push(...attributesForNFT);
+        });
+
+        setAttributes(allAttributes);
+      } catch (error) {
+        console.log("Error fetching attributes: ", error);
+      }
+    };
+
+    fetchAttributesForAllNFTs();
+  }, [walletData.metadata]);
 
   if (!account || walletData.tokenIds.length === 0) {
     return <Loader />;
@@ -108,8 +185,17 @@ const Gallery = () => {
               "ipfs://",
               "https://ipfs.io/ipfs/"
             );
+
             return (
-              <NFTCard key={tokenId} tokenId={tokenId} tokenURI={imageUrl} />
+              <NFTCard
+                key={tokenId}
+                tokenId={tokenId}
+                tokenURI={imageUrl}
+                attributes={attributes.filter(
+                  attr => attr.token_id === tokenId.toString()
+                )}
+                handleClick={() => setSelectedTokenId(null)}
+              />
             );
           })}
         </div>
@@ -136,14 +222,14 @@ const Gallery = () => {
                 />
               </div>
               <p className="ml-4">
-                You have {airdropTokens.toString()} airdrops left{" "}
+                You have {airdropTokens?.toString()} airdrops left{" "}
               </p>
               <div className="flex flex-1 justify-center"></div>
             </div>
           </>
         )}
 
-        <div className="flex flex-1 ">
+        <div className="flex flex-1 mt-4 ">
           <h1 className="font-extralight sm:w-80">
             My{" "}
             <span className="font-extrabold underline decoration-pink-600/50">
