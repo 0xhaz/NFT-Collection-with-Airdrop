@@ -28,21 +28,6 @@ export const ContractContext = createContext<ContractContextValue>({
   provider: null,
 });
 
-const getProvider = () => {
-  let provider;
-
-  if (process.env.NEXT_PUBLIC_ENVIRONMENT === "sepolia") {
-    provider = new ethers.providers.InfuraProvider(
-      "sepolia",
-      process.env.NEXT_PUBLIC_INFURA_KEY
-    );
-  } else {
-    provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
-  }
-  //   console.log(provider);
-  return provider;
-};
-
 export const ContractProvider = ({ children }: ContractProviderProps) => {
   const provider = getProvider();
 
@@ -66,7 +51,7 @@ export const ContractProvider = ({ children }: ContractProviderProps) => {
 
   const loadNetwork = async (provider: any) => {
     const { chainId } = await provider.getNetwork();
-
+    console.log(chainId);
     return chainId;
   };
 
@@ -87,3 +72,18 @@ export const ContractProvider = ({ children }: ContractProviderProps) => {
 export function useContract() {
   return useContext(ContractContext);
 }
+
+const getProvider = () => {
+  let provider;
+
+  if (process.env.NEXT_PUBLIC_ENVIRONMENT === "sepolia") {
+    provider = new ethers.providers.InfuraProvider(
+      "sepolia",
+      process.env.NEXT_PUBLIC_INFURA_API_KEY
+    );
+  } else {
+    provider = new ethers.providers.JsonRpcProvider();
+  }
+  // console.log(provider);
+  return provider;
+};

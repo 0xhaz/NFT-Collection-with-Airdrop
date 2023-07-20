@@ -246,7 +246,16 @@ const Gallery = () => {
   }, [account, getTokenURIByOwner, fetchAiWallet, fetchAiMetadata]);
 
   if (!account || walletData.tokenIds.length === 0) {
-    return <Loader />;
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h1 className="text-3xl font-bold lg:text-5xl lg:font-extrabold mb-10">
+          No{" "}
+          <span className="font-extrabold underline decoration-pink-600/50">
+            Collections Yet
+          </span>
+        </h1>
+      </div>
+    );
   }
 
   return (

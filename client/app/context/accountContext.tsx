@@ -39,7 +39,7 @@ export const AccountProvider = ({
         walletconnect: {
           package: WalletConnectProvider,
           options: {
-            infuraId: process.env.NEXT_PUBLIC_INFURA_ID,
+            infuraId: process.env.NEXT_PUBLIC_INFURA_PROJECT_ID,
           },
         },
       },
