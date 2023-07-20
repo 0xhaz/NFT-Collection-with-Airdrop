@@ -61,7 +61,7 @@ export const GeneratedNFTProvider = ({
         throw error;
       }
     },
-    [generatedNFTContract, account]
+    [generatedNFTContract, account, accountProvider, airdropContract]
   );
 
   const getOwnedTokens = useCallback(async () => {
@@ -75,7 +75,7 @@ export const GeneratedNFTProvider = ({
       console.log("Error getting NFT: ", error);
       throw error;
     }
-  }, [generatedNFTContract]);
+  }, [generatedNFTContract, accountProvider]);
 
   const getAllTokens = useCallback(async () => {
     const signer = accountProvider?.getSigner();
@@ -86,7 +86,7 @@ export const GeneratedNFTProvider = ({
       console.log("Error getting NFT: ", error);
       throw error;
     }
-  }, [generatedNFTContract]);
+  }, [generatedNFTContract, accountProvider]);
 
   const getAirdropBalance = useCallback(
     async (address: string) => {
@@ -99,7 +99,7 @@ export const GeneratedNFTProvider = ({
         throw error;
       }
     },
-    [generatedNFTContract]
+    [generatedNFTContract, accountProvider]
   );
 
   const setApprovalForAll = useCallback(
@@ -123,7 +123,7 @@ export const GeneratedNFTProvider = ({
         console.log("Error setting approval for all: ", error);
       }
     },
-    [generatedNFTContract, airdropContract, account]
+    [generatedNFTContract, airdropContract, account, accountProvider]
   );
 
   const getTokenURIByOwner = useCallback(
@@ -162,7 +162,7 @@ export const GeneratedNFTProvider = ({
         throw error;
       }
     },
-    [generatedNFTContract, account]
+    [generatedNFTContract, account, accountProvider]
   );
 
   return (

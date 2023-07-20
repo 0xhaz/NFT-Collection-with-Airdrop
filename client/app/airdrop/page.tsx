@@ -97,7 +97,7 @@ const Airdrop = () => {
     };
 
     fetchNFTTokens();
-  }, []);
+  }, [account, getNFTTokens]);
 
   return (
     <>

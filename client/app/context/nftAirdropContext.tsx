@@ -49,7 +49,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract, account]
+    [airdropContract, account, accountProvider]
   );
 
   const isTokenExists = useCallback(
@@ -65,7 +65,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract]
+    [airdropContract, accountProvider]
   );
 
   const canClaim = useCallback(
@@ -82,7 +82,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract]
+    [airdropContract, accountProvider]
   );
 
   const burnToken = useCallback(
@@ -96,7 +96,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract, account]
+    [airdropContract, account, accountProvider]
   );
 
   const getNFTTokens = useCallback(
@@ -111,7 +111,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract]
+    [airdropContract, accountProvider]
   );
 
   const getClaimStatus = useCallback(
@@ -126,7 +126,7 @@ export const NFTAirdropProvider = ({
         throw error;
       }
     },
-    [airdropContract]
+    [airdropContract, accountProvider]
   );
 
   return (

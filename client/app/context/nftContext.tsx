@@ -51,7 +51,7 @@ export const NFTDataProvider = ({
         throw error;
       }
     },
-    [nftContract, account]
+    [nftContract, account, accountProvider]
   );
 
   const getNft = useCallback(async () => {
@@ -64,7 +64,7 @@ export const NFTDataProvider = ({
       console.log("Error getting NFT: ", error);
       throw error;
     }
-  }, [nftContract]);
+  }, [nftContract, account, accountProvider]);
 
   const getCost = useCallback(async () => {
     try {

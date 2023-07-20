@@ -124,7 +124,7 @@ const Generative = () => {
   useEffect(() => {
     if (!account) return;
     getBalance();
-  }, [account]);
+  }, [account, getBalance]);
 
   return (
     <>

@@ -4,7 +4,6 @@ import CustomButton from "../components/CustomButton";
 import { useNFT, useAccount } from "../context";
 import { useState, useEffect } from "react";
 import Loader from "../components/Loader";
-import { BigNumber, ethers } from "ethers";
 
 const Mint = () => {
   const [totalSupply, setTotalSupply] = useState<number>(0);
@@ -12,13 +11,7 @@ const Mint = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [cost, setCost] = useState<string>("");
   const { account } = useAccount();
-  const { mintNft, getTotalSupply, getCost, getBalance } = useNFT();
-
-  useEffect(() => {
-    if (!account) return;
-    fetchTotalSupply();
-    fetchCost();
-  }, [account]);
+  const { mintNft, getTotalSupply, getCost } = useNFT();
 
   const fetchTotalSupply = async () => {
     try {
@@ -48,6 +41,12 @@ const Mint = () => {
       console.log("Error minting NFT: ", error);
     }
   };
+
+  useEffect(() => {
+    if (!account) return;
+    fetchTotalSupply();
+    fetchCost();
+  }, [account, fetchCost, fetchTotalSupply]);
 
   return (
     <>
@@ -87,7 +86,7 @@ const Mint = () => {
         <>
           <div className="text-center mt-4">
             <p className="text-gray-500">
-              Total NFT's Minted: {totalSupply.toString()}
+              {`Total NFT's Minted`}: {totalSupply.toString()}
             </p>
           </div>
         </>
