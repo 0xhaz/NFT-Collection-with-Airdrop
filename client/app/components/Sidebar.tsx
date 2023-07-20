@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/router";
+import { useRouter, usePathname } from "next/navigation";
 import { MENU } from "../constants";
 
 interface IconProps {
@@ -55,15 +55,16 @@ const Icon: React.FC<IconProps> = ({
 
 const Sidebar = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const [isActive, setIsActive] = useState("");
 
   useEffect(() => {
-    const currentPath = router.pathname;
+    const currentPath = pathname;
     const activeLink = MENU.find(item => currentPath.startsWith(item.path));
     if (activeLink) {
       setIsActive(activeLink.name);
     }
-  }, [router.pathname]);
+  }, [pathname]);
 
   return (
     <div className="lg:col-span-4 bg-gradient-to-br from-cyan-800 to-rose-500">
