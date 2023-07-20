@@ -73,7 +73,7 @@ const Generative = () => {
     });
 
     const url = `https://ipfs.io/ipfs/${ipnft}/metadata.json`;
-    console.log("URL: ", url);
+
     setUrl(url);
 
     return url;
@@ -104,7 +104,6 @@ const Generative = () => {
     if (account) {
       const balance = await getAirdropBalance(account);
       setAirdropBalance(balance);
-      console.log("Balance: ", balance.toString());
     }
   };
 

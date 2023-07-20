@@ -202,8 +202,6 @@ const Gallery = () => {
         tokenURIs: metadataResponse,
         metadata: metadataResponse,
       }));
-
-      console.log("aiWalletData", aiWalletData);
     } catch (error) {
       console.log("Error fetching wallet: ", error);
     }

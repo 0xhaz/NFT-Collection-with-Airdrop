@@ -142,7 +142,7 @@ export const GeneratedNFTProvider = ({
         const validTokenIds: number[] = [];
         const validTokenURIs: string[] = [];
 
-        for (let i = 1; i < tokenURIs.length; i++) {
+        for (let i = 0; i < tokenURIs.length; i++) {
           const tokenURI = tokenURIs[i];
           if (
             typeof tokenURI === "string" &&

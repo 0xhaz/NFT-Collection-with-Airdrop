@@ -56,7 +56,9 @@ const NFTModal = ({
           {textData ? (
             <>
               <h2 className="text-2xl font-bold">{textData.name}</h2>
-              <p className="text-xl leading-10">{textData?.description}</p>
+              <div className="flex pt-10 justify-center">
+                <p className="text-xl leading-10">{textData?.description}</p>
+              </div>
             </>
           ) : (
             <>
