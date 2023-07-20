@@ -59,10 +59,10 @@ const Sidebar = () => {
   const [isActive, setIsActive] = useState("");
 
   useEffect(() => {
-    const currentPath = pathname;
-    const activeLink = MENU.find(item => currentPath.startsWith(item.path));
-    if (activeLink) {
-      setIsActive(activeLink.name);
+    // set active icon to the current path
+    const isActive = MENU.find(item => item.path === pathname);
+    if (isActive) {
+      setIsActive(isActive.name);
     }
   }, [pathname]);
 
