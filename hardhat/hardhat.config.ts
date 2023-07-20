@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
     sepolia: {
       url: SEPOLIA_URL,
       accounts: [process.env.PRIVATE_KEY!],
-      chainId: 5,
+      chainId: 11155111,
       allowUnlimitedContractSize: true,
     },
   },
