@@ -4,10 +4,9 @@ import CustomButton from "../components/CustomButton";
 import { useAccount, useNFTAirdrop } from "../context";
 import Loader from "../components/Loader";
 import Image from "next/image";
-import { allowList, generateMerkleTree } from "../utils/generate-merkle-tree";
+import { generateMerkleTree } from "../utils/generate-merkle-tree";
 import { arrayify, keccak256 } from "ethers/lib/utils";
 import { MerkleTree } from "merkletreejs";
-import { ethers } from "ethers";
 
 interface TreeProps {
   treeInstance: MerkleTree | null;
