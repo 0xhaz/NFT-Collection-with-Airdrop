@@ -1,8 +1,7 @@
 import Image from "next/image";
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
-import { useRouter } from "next/router";
-import NFTModal from "../nftModal/page";
+import NFTModal from "../NFTModal/page";
 
 type Attribute = {
   token_id: number | string;
