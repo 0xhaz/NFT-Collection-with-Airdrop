@@ -65,7 +65,7 @@ const Airdrop = () => {
 
   const displayTokens = () => {
     if (nftTokens.length === 0) {
-      return <p>You don't have any NFT</p>;
+      return <p>{`You don&apos;t have any NFT`}</p>;
     }
 
     if (claimStatus) {
