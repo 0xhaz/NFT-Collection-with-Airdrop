@@ -18,6 +18,13 @@ type Attribute = {
   attributes?: Attribute[] | undefined;
 };
 
+type AiAttribute = {
+  token_id: number | string;
+  name: string;
+  description: string;
+  image: string;
+};
+
 const Gallery = () => {
   const { getWallet } = useNFT();
   const { account } = useAccount();
@@ -35,7 +42,17 @@ const Gallery = () => {
   const [airdropTokens, setAirdropTokens] = useState<number>(0);
   const [tokenExists, setTokenExists] = useState<boolean>(false);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [aiAttributes, setAiAttributes] = useState<AiAttribute[]>([]);
   const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null);
+  const [aiWalletData, setAiWalletData] = useState<{
+    tokenIds: number[];
+    tokenURIs: string[];
+    metadata: string[];
+  }>({
+    tokenIds: [],
+    tokenURIs: [],
+    metadata: [],
+  });
 
   const fetchWallet = async () => {
     try {
@@ -156,6 +173,80 @@ const Gallery = () => {
     fetchAttributesForAllNFTs();
   }, [walletData.metadata]);
 
+  // Gen Art Functions
+
+  const fetchAiWallet = async () => {
+    try {
+      if (!account) return;
+      const walletAi = await getTokenURIByOwner(account);
+
+      const metadata = walletAi.tokenURIs.map(async tokenURI => {
+        const imageUrl = tokenURI?.replace?.(
+          "ipfs://",
+          "https://ipfs.io/ipfs/"
+        );
+
+        if (imageUrl) {
+          const { data } = await axios.get(imageUrl);
+          return data.image;
+        }
+
+        return "";
+      });
+
+      const metadataResponse = await Promise.all(metadata);
+
+      setAiWalletData(prev => ({
+        ...prev,
+        tokenIds: walletAi.tokenIds,
+        tokenURIs: metadataResponse,
+        metadata: metadataResponse,
+      }));
+
+      console.log("aiWalletData", aiWalletData);
+    } catch (error) {
+      console.log("Error fetching wallet: ", error);
+    }
+  };
+
+  const fetchAiMetadata = async () => {
+    try {
+      if (!account) return;
+      const aiWalletData = await getTokenURIByOwner(account);
+
+      let tokenId = aiWalletData.tokenIds.length;
+      let dataFetch: AiAttribute[] = [];
+
+      // let data = await axios.get(aiWalletData.tokenURIs[0]);
+
+      for (let i = 0; i < tokenId; i++) {
+        let data = await axios.get(aiWalletData.tokenURIs[i]);
+        dataFetch.push({
+          token_id: aiWalletData.tokenIds[i].toString(),
+          name: data.data.name,
+          description: data.data.description,
+          image: data.data.image,
+        });
+      }
+
+      // console.log("dataFetch", dataFetch);
+
+      setAiAttributes(dataFetch);
+
+      // console.log("data", data);
+      // return data;
+    } catch (error) {
+      console.log("Error fetching Metadata: ", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!account) return;
+
+    fetchAiWallet();
+    fetchAiMetadata();
+  }, [account, getTokenURIByOwner]);
+
   if (!account || walletData.tokenIds.length === 0) {
     return <Loader />;
   }
@@ -179,7 +270,7 @@ const Gallery = () => {
           </h1>
         </div>
         <hr className="my-2 border" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-4 mb-4">
           {walletData?.tokenIds?.map((tokenId, index) => {
             const imageUrl = walletData?.tokenURIs[index].replace(
               "ipfs://",
@@ -239,6 +330,25 @@ const Gallery = () => {
           </h1>
         </div>
         <hr className="my-2 border" />
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          {aiWalletData?.tokenIds?.map((tokenId, index) => {
+            const imageUrl = aiWalletData?.tokenURIs[index].replace(
+              "ipfs://",
+              "https://ipfs.io/ipfs/"
+            );
+            const textData = aiAttributes[index];
+
+            return (
+              <NFTCard
+                key={tokenId}
+                tokenId={tokenId}
+                tokenURI={imageUrl}
+                textData={textData}
+                handleClick={() => setSelectedTokenId(null)}
+              />
+            );
+          })}
+        </div>
       </div>
     </>
   );

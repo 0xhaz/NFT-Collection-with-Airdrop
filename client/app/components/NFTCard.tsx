@@ -11,10 +11,18 @@ type Attribute = {
   attributeList?: Attribute[];
 };
 
+type AiAttribute = {
+  token_id: number | string;
+  name: string;
+  description: string;
+  image: string;
+};
+
 type NFTCardProps = {
   tokenId: number;
   tokenURI: string;
   attributes?: Attribute[] | undefined;
+  textData?: AiAttribute | undefined;
   handleClick: () => void;
 };
 
@@ -23,6 +31,7 @@ const NFTCard = ({
   tokenURI,
   attributes,
   handleClick,
+  textData,
 }: NFTCardProps) => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -44,7 +53,7 @@ const NFTCard = ({
   return (
     <>
       <div
-        className="w-[250px] h-[300px] border border-gray-200 rounded-lg p-4 flex flex-col mt-4 cursor-pointer"
+        className="w-[250px] h-[300px] border border-gray-200 rounded-lg p-4 flex flex-col mt-4 cursor-pointer mb-2"
         onClick={toggleModal}
       >
         {loading ? (
@@ -60,7 +69,11 @@ const NFTCard = ({
         )}
 
         <div className="text-center mt-2">
-          <p className="text-sm font-bold">Punks #{tokenId.toString()}</p>
+          {textData ? (
+            <p className="text-sm font-bold">{textData.name}</p>
+          ) : (
+            <p className="text-sm font-bold">Punks #{tokenId.toString()}</p>
+          )}
         </div>
       </div>
 
@@ -79,6 +92,7 @@ const NFTCard = ({
             tokenURI={tokenURI}
             handleClick={toggleModal}
             attributes={attributes}
+            textData={textData}
           />
         )}
       </Modal>

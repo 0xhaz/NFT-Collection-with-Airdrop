@@ -135,6 +135,7 @@ export const GeneratedNFTProvider = ({
         const walletData = await contractWithSigner?.getTokenURIsByAddress(
           address
         );
+        // console.log("walletData: ", walletData);
         const tokenIds: number[] = walletData[0];
         const tokenURIs: string[] = walletData[1];
 
@@ -143,7 +144,10 @@ export const GeneratedNFTProvider = ({
 
         for (let i = 1; i < tokenURIs.length; i++) {
           const tokenURI = tokenURIs[i];
-          if (typeof tokenURI === "string" && tokenURI.startsWith("ipfs://")) {
+          if (
+            typeof tokenURI === "string" &&
+            tokenURI.startsWith("https://ipfs.io")
+          ) {
             validTokenIds.push(tokenIds[i]);
             validTokenURIs.push(tokenURI);
           }

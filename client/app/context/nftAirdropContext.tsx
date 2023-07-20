@@ -54,6 +54,7 @@ export const NFTAirdropProvider = ({
 
   const isTokenExists = useCallback(
     async (address: string) => {
+      if (!accountProvider) return;
       const signer = accountProvider?.getSigner();
       const contractWithSigner = airdropContract?.connect(signer);
       try {
