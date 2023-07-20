@@ -1,6 +1,5 @@
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import CustomButton from "../components/CustomButton";
 
 type Attribute = {
