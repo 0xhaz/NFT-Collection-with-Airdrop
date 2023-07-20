@@ -21,7 +21,7 @@ type Attribute = {
 const Gallery = () => {
   const { getWallet } = useNFT();
   const { account } = useAccount();
-  const { getAirdropBalance } = useGeneratedNFT();
+  const { getAirdropBalance, getTokenURIByOwner } = useGeneratedNFT();
   const { isTokenExists } = useNFTAirdrop();
   const [walletData, setWalletData] = useState<{
     tokenIds: number[];

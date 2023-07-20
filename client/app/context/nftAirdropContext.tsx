@@ -38,10 +38,7 @@ export const NFTAirdropProvider = ({
 
   const claimAirdrop = useCallback(
     async (proof: Proof) => {
-      if (!account) {
-        console.log("No account");
-        return;
-      }
+      if (!account) return;
       const signer = accountProvider?.getSigner();
       const contractWithSigner = airdropContract?.connect(signer);
       try {

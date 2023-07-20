@@ -90,7 +90,7 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
 
     function getTokenURIsByAddress(
         address _owner
-    ) external view returns (string[] memory) {
+    ) external view returns (uint256[] memory, string[] memory) {
         uint256 totalTokens = s_tokenIds.current();
         uint256 ownerTokenCount = 0;
 
@@ -101,18 +101,20 @@ contract GeneratedNFT is ERC721URIStorage, IERC1155Receiver, Ownable {
             }
         }
 
+        uint256[] memory tokenIds = new uint256[](ownerTokenCount);
         string[] memory tokenURIs = new string[](ownerTokenCount);
         uint256 tokenIndex = 0;
 
         for (uint256 i = 0; i < totalTokens; i++) {
             uint256 tokenId = i + 1;
             if (ownerOf(tokenId) == _owner) {
+                tokenIds[tokenIndex] = tokenId;
                 tokenURIs[tokenIndex] = tokenURI(tokenId);
                 tokenIndex++;
             }
         }
 
-        return tokenURIs;
+        return (tokenIds, tokenURIs);
     }
 
     function isTokenBurned(

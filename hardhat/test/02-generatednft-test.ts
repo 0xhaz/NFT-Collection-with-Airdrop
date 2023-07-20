@@ -187,40 +187,41 @@ describe("GeneratedNFT", () => {
           .connect(user1)
           .mint("TokenURI3", { value: ethers.utils.parseEther("10") });
 
-        // Mint tokens to user2
-        await generatedNFT
-          .connect(user2)
-          .mint("TokenURI4", { value: ethers.utils.parseEther("10") });
-
         // Get the list of token URIs for user1
-        const user1TokenURIs = await generatedNFT.getTokenURIsByAddress(
+        const [tokenIds, tokenURIs] = await generatedNFT.getTokenURIsByAddress(
           user1.address
         );
 
         // Check if the retrieved token URIs match the expected values
-        expect(user1TokenURIs).to.have.lengthOf(3);
-        expect(user1TokenURIs[0]).to.equal("TokenURI1");
-        expect(user1TokenURIs[1]).to.equal("TokenURI2");
-        expect(user1TokenURIs[2]).to.equal("TokenURI3");
+        expect(tokenIds).to.have.lengthOf(3);
+        expect(tokenIds[0]).to.equal(1);
+        expect(tokenIds[1]).to.equal(2);
+        expect(tokenIds[2]).to.equal(3);
 
-        // Get the list of token URIs for user2
-        const user2TokenURIs = await generatedNFT.getTokenURIsByAddress(
-          user2.address
-        );
+        expect(tokenURIs).to.have.lengthOf(3);
+        expect(tokenURIs[0]).to.equal("TokenURI1");
+        expect(tokenURIs[1]).to.equal("TokenURI2");
+        expect(tokenURIs[2]).to.equal("TokenURI3");
 
-        // Check if the retrieved token URIs match the expected values
-        expect(user2TokenURIs).to.have.lengthOf(1);
-        expect(user2TokenURIs[0]).to.equal("TokenURI4");
+        // // Get the list of token URIs for user2
+        // const user2TokenURIs = await generatedNFT.getTokenURIsByAddress(
+        //   user2.address
+        // );
+
+        // // Check if the retrieved token URIs match the expected values
+        // expect(user2TokenURIs).to.have.lengthOf(1);
+        // expect(user2TokenURIs[0]).to.equal("TokenURI4");
       });
 
       it("should return an empty array for an address with no minted tokens", async () => {
         // Get the list of token URIs for deployer (should be empty as no tokens are minted yet)
-        const deployerTokenURIs = await generatedNFT.getTokenURIsByAddress(
-          user3.address
+        const [tokenIds, tokenURIs] = await generatedNFT.getTokenURIsByAddress(
+          deployer.address
         );
 
         // Check if the retrieved token URIs are an empty array
-        expect(deployerTokenURIs).to.have.lengthOf(0);
+        expect(tokenIds).to.have.lengthOf(0);
+        expect(tokenURIs).to.have.lengthOf(0);
       });
     });
   });

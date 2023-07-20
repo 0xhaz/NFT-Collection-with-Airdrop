@@ -44,7 +44,7 @@ const NFTModal = ({
           )}
         </div>
         <div className="w-1/2 md:ml-4 ">
-          <h2 className="text-2xl font-bold">NFT #{tokenId.toString()}</h2>
+          <h2 className="text-2xl font-bold">Punks #{tokenId.toString()}</h2>
           {attributes?.map((attribute: Attribute, index: number) => (
             <div key={index} className="flex justify-between">
               <p className="text-xl">{attribute?.trait_type}</p>

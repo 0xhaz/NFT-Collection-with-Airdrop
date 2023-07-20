@@ -9,6 +9,9 @@ interface GeneratedNFTContextProps {
   getAllTokens: () => Promise<number[]>;
   getAirdropBalance: (address: string) => Promise<number>;
   setApprovalForAll: (address: string) => Promise<void>;
+  getTokenURIByOwner: (
+    address: string
+  ) => Promise<{ tokenIds: number[]; tokenURIs: string[] }>;
 }
 
 export const GeneratedNFTContext = createContext<GeneratedNFTContextProps>({
@@ -17,6 +20,10 @@ export const GeneratedNFTContext = createContext<GeneratedNFTContextProps>({
   getAllTokens: async () => [],
   getAirdropBalance: async () => 0,
   setApprovalForAll: async (address: string) => {},
+  getTokenURIByOwner: async () => ({
+    tokenIds: [],
+    tokenURIs: [],
+  }),
 });
 
 export type GeneratedNFTDataProviderProps = {
@@ -39,7 +46,6 @@ export const GeneratedNFTProvider = ({
         const isAirdropTokenHolder =
           await airdropContractWithSigner?.isTokenExists(account);
         const balance = await contractWithSigner?.getAirdropBalance(account);
-        console.log("Balance: ", balance.toString());
 
         if (isAirdropTokenHolder && balance > 0) {
           const mintTx = await contractWithSigner?.mint(tokenURI);
@@ -120,6 +126,41 @@ export const GeneratedNFTProvider = ({
     [generatedNFTContract, airdropContract, account]
   );
 
+  const getTokenURIByOwner = useCallback(
+    async (address: string) => {
+      if (!accountProvider) throw new Error("Account provider not found");
+      const signer = accountProvider?.getSigner();
+      const contractWithSigner = generatedNFTContract?.connect(signer);
+      try {
+        const walletData = await contractWithSigner?.getTokenURIsByAddress(
+          address
+        );
+        const tokenIds: number[] = walletData[0];
+        const tokenURIs: string[] = walletData[1];
+
+        const validTokenIds: number[] = [];
+        const validTokenURIs: string[] = [];
+
+        for (let i = 1; i < tokenURIs.length; i++) {
+          const tokenURI = tokenURIs[i];
+          if (typeof tokenURI === "string" && tokenURI.startsWith("ipfs://")) {
+            validTokenIds.push(tokenIds[i]);
+            validTokenURIs.push(tokenURI);
+          }
+        }
+
+        return {
+          tokenIds: validTokenIds,
+          tokenURIs: validTokenURIs,
+        };
+      } catch (error) {
+        console.log("Error getting token URI: ", error);
+        throw error;
+      }
+    },
+    [generatedNFTContract, account]
+  );
+
   return (
     <GeneratedNFTContext.Provider
       value={{
@@ -128,6 +169,7 @@ export const GeneratedNFTProvider = ({
         getAllTokens,
         getAirdropBalance,
         setApprovalForAll,
+        getTokenURIByOwner,
       }}
     >
       {children}
