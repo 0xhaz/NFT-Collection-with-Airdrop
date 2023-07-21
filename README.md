@@ -18,6 +18,8 @@
 
 ## Introduction
 
+![Image Description](client/public/assets/nft%20process%20flow.png)
+
 This project consists of three Solidity smart contracts that allow users to mint NFTs, participate in an airdrop using a Merkle tree, and mint Generative Art NFTs by burning the airdrop token . The contracts leverage ERC721 and ERC1155 standards to manage NFTs and airdrop tokens respectively. Let's dive into each contract's functionalities.
 
 ## Getting Started
