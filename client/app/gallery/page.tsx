@@ -137,7 +137,7 @@ const Gallery = () => {
     fetchWallet();
     checkTokenExists();
     fetchAirdropTokens();
-  }, [account, getWallet, checkTokenExists, fetchAirdropTokens, fetchWallet]);
+  }, [account]);
 
   useEffect(() => {
     if (walletData.metadata.length === 0) return;
@@ -171,7 +171,7 @@ const Gallery = () => {
     };
 
     fetchAttributesForAllNFTs();
-  }, [walletData.metadata, account, walletData.tokenIds, fetchMetadata]);
+  }, [walletData.metadata]);
 
   // Gen Art Functions
 
@@ -243,7 +243,7 @@ const Gallery = () => {
 
     fetchAiWallet();
     fetchAiMetadata();
-  }, [account, getTokenURIByOwner, fetchAiWallet, fetchAiMetadata]);
+  }, [account, fetchAiWallet, fetchAiMetadata]);
 
   if (!account || walletData.tokenIds.length === 0) {
     return (
