@@ -243,7 +243,7 @@ const Gallery = () => {
 
     fetchAiWallet();
     fetchAiMetadata();
-  }, [account, fetchAiWallet, fetchAiMetadata]);
+  }, [account]);
 
   if (!account || walletData.tokenIds.length === 0) {
     return (
